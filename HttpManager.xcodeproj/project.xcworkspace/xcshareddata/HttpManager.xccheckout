@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>D7E33831-0201-4369-ADDB-F738852948D1</string>
+	<key>IDESourceControlProjectName</key>
+	<string>HttpManager</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>FC09C91DD7F4A4DE8B6F0AF30B7930BCAAEF4686</key>
+		<string>ssh://ssh.gitlab.mafengwo.com:333/orchard/Strawberry.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>HttpManager/HttpManager.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>FC09C91DD7F4A4DE8B6F0AF30B7930BCAAEF4686</key>
+		<string>../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>ssh://ssh.gitlab.mafengwo.com:333/orchard/Strawberry.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>FC09C91DD7F4A4DE8B6F0AF30B7930BCAAEF4686</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>FC09C91DD7F4A4DE8B6F0AF30B7930BCAAEF4686</string>
+			<key>IDESourceControlWCCName</key>
+			<string>Strawberry</string>
+		</dict>
+	</array>
+</dict>
+</plist>
