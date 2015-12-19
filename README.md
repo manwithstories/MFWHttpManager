@@ -7,11 +7,16 @@ MFWHttpManager <a href="#介绍">简介</a>
 Introduction
 ==============
 
-基于AFNetworking(AFURLSessionManager)的一个高度封装的Http请求管理库。
+一个基于AFNetworking的高度封装的Http请求管理库。
 
 
 Features
 ==============
+- **结构**:分为三个部分,详见下面列出类的.h文件。代码即注释,你们懂得😊
+  - **Task(任务)**:MFWHttpTask
+  - **Engine(流水线引擎)**: MFWHttpEngine
+  - **plugin(插件)**: 1、Request插件:MFWRequestBaseBuilder  2、Response插件:MFWResponseBaseHandler
+
 - **总述**:
   - **1**: 基于流水线的设计思想,请求时创建一个MFWHttpTask(任务)对象,MFWHttpTask里面封装了MFWHttpRequest(request),MFWHttpResponse(response)两个对象。
   
@@ -22,7 +27,7 @@ Features
 - **特性**:
   - **插件机制**: 每一个MFWHttpTask对象可以捆绑Request插件(在请求前做一些事情,比如添加公共参数,Xauth认证)和Response插件(在请求完成之后做一些事情,比如通知一些界面改变)。
   
-  - **一对多管理机制**: 假如你创建了N个MFWHttpTask对象同时访问同一个资源地址(www.mafengwo.com/poilist.php?page=1&size=20)。 请求URL,参数,HttpMethod完全一样,当第一个MFWHttpTask没有被执行完成的时候,MFWHttpEngine不会发送N个请求,只会发送一个网络请求。但是剩下的MFWHttpTask都能监听到请求的状态,也都会执行相应的回调。
+  - **一对多管理机制**: 假如你创建了N个MFWHttpTask对象同时访问同一个资源地址(www.mafengwo.com/poilist.php?page=1&size=20)。 请求URL,参数,HttpMethod完全一样,MFWHttpEngine不会发送N个请求,只会发送一个网络请求,剩下的MFWHttpTask都会在队列中监听请求的状态,并在完成后得到数据。最大限度的节省了系统开销。
   
   - **下载支持断点续传**: 支持下载断点续传,无需做专门设置,创建一个下载类型的MFWHttpTask任务,您的下载请求就会自动支持断点续传。(当然还得服务器支持下载断点续传功能)
   
