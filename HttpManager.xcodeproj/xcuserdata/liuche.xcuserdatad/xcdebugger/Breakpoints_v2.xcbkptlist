@@ -42,11 +42,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "HttpManager/MFWHttpManager/Task/MFWHttpTask.m"
-            timestampString = "472131097.848331"
+            timestampString = "472283404.878379"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "220"
-            endingLineNumber = "220">
+            startingLineNumber = "225"
+            endingLineNumber = "225">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -82,7 +82,7 @@
                   moduleName = "HttpManager"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/liuche/Strawberry/HttpManager/HttpManager/AFNetworking/AFURLRequestSerialization.h"
-                  timestampString = "472136293.03701"
+                  timestampString = "472285008.060987"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "380"
@@ -97,7 +97,7 @@
                   moduleName = "HttpManager"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/liuche/Strawberry/HttpManager/HttpManager/AFNetworking/AFURLRequestSerialization.h"
-                  timestampString = "472136293.03727"
+                  timestampString = "472285008.061285"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "0"
@@ -130,7 +130,7 @@
                   moduleName = "HttpManager"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/liuche/Strawberry/HttpManager/HttpManager/AFNetworking/AFURLRequestSerialization.h"
-                  timestampString = "472136293.038321"
+                  timestampString = "472285008.062579"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "380"
@@ -145,7 +145,7 @@
                   moduleName = "HttpManager"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/liuche/Strawberry/HttpManager/HttpManager/AFNetworking/AFURLRequestSerialization.h"
-                  timestampString = "472136293.038486"
+                  timestampString = "472285008.062745"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "0"

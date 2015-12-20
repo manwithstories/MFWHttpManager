@@ -16,6 +16,11 @@
 @synthesize response = _response;
 @synthesize resourceID = _resourceID;
 
+- (void)dealloc
+{
+    NSLog(@"%@ 释放了",self);
+}
+
 - (instancetype)init
 {
     self = [super init];
