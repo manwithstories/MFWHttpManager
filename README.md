@@ -1,7 +1,7 @@
 MFWHttpManager <a href="#介绍">简介</a>
 ==============
 [![Support](https://img.shields.io/badge/support-iOS%207%2B%20-blue.svg?style=flat)](https://www.apple.com/nl/ios/)&nbsp;
-[![Support](https://img.shields.io/badge/support-AFNetWorking-blue.svg)](https://www.apple.com/nl/ios/)&nbsp;
+[![Support](https://img.shields.io/badge/support-AFNetWorking-blue.svg)](https://github.com/AFNetworking/AFNetworking)&nbsp;
 
 
 Introduction
