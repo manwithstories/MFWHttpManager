@@ -12,6 +12,8 @@
 
 #define DOWN_FILE @"http://supportdownload.apple.com/download.info.apple.com/Apple_Support_Area/Apple_Software_Updates/Mac_OS_X/downloads/031-03190.20140529.Pp3r4/JavaForOSX2014-001.dmg"
 
+#define  DOWN_PATH @"/Documents/download/1"
+
 @interface DownloadViewController()
 
 @property(nonatomic,strong)UIProgressView *progressView1;
@@ -64,6 +66,8 @@
 }
 
 - (void)clickButton1:(UIButton*)btn{
+
+    __weak DownloadViewController *wself = self;
     MFWHttpTaskEngine *engine =  [MFWHttpTaskEngine defaultEngine];
     if(!btn.selected){
         self.task1 = [[MFWHttpTask alloc] init];
@@ -72,9 +76,11 @@
         self.task1.request.URLString = DOWN_FILE;
         self.task1.taskType = HttpTaskTypeDownload;
         
+         NSString *path = [NSString stringWithFormat:@"%@%@",NSHomeDirectory(),DOWN_PATH];
+        self.task1.saveDownloadFilePath = path ;
         self.task1.progerssBlock = ^(MFWHttpTask *task,NSProgress *progress){
             dispatch_sync(dispatch_get_main_queue(), ^{
-                [self.progressView1 setProgress:progress.fractionCompleted];
+                [wself.progressView1 setProgress:progress.fractionCompleted];
             });
         };
         
@@ -90,14 +96,15 @@
 
 - (void)clickButton2:(UIButton*)btn{
     MFWHttpTaskEngine *engine =  [MFWHttpTaskEngine defaultEngine];
-
+    
     if(!btn.selected){
         self.task2 = [[MFWHttpTask alloc] init];
         self.task2.request.reqeustTimeout = 10;
         self.task2.request.httpMethod = HttpMethodGet;
         self.task2.request.URLString = DOWN_FILE;
         self.task2.taskType = HttpTaskTypeDownload;
-        
+         NSString *path = [NSString stringWithFormat:@"%@%@",NSHomeDirectory(),DOWN_PATH];
+        self.task2.saveDownloadFilePath = path ;
         __weak DownloadViewController *wself = self;
         self.task2.progerssBlock = ^(MFWHttpTask *task,NSProgress *progress){
             dispatch_sync(dispatch_get_main_queue(), ^{

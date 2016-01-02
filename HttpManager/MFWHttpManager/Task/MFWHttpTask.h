@@ -77,7 +77,6 @@ typedef enum{
  MFWHttpResponse - 封装一个完整的接口响应
  taskIdentifier - 接口请求任务的唯一标识
  
- supportBackgroudRequest - 是否支持后台请求
  taskType - 请求类型
  taskCachePolicy - 请求是否缓存
  */
@@ -85,37 +84,56 @@ typedef enum{
 @interface MFWHttpTask : NSObject
 
 @property (nonatomic, strong) NSError *error;
-@property (nonatomic, strong) MFWHttpRequest *request;                   //请求
-@property (nonatomic, strong, readonly) MFWHttpResponse *response;       //响应
 
-//config
-@property (nonatomic, assign) HttpTaskType taskType;                      //任务类型
-@property (nonatomic, assign) MFWHttpTaskCachePolicy taskCachePolicy;        //是否缓存
-@property (nonatomic, assign) BOOL supportBackgroudRequest;                  //是否支持后台请求
-@property (nonatomic, assign) BOOL isMultipartForm;                          //just for upload & post
-@property (nonatomic, assign) HttpTaskStatus taskStatus;                     //task 状态
+//request封装对象
+@property (nonatomic, strong) MFWHttpRequest *request;
 
-//plugin
-@property (nonatomic,   copy) id <HttpRequestBuildProtocol> requestPlugin;      //请求处理插件
-@property (nonatomic,   copy) id <HttpResponseHandleProtocol> responsePlugin;
+//response封装对象
+@property (nonatomic, strong, readonly) MFWHttpResponse *response;   
+
+//任务类型
+@property (nonatomic, assign) HttpTaskType taskType;
+
+//是否缓存
+@property (nonatomic, assign) MFWHttpTaskCachePolicy taskCachePolicy;
+
+//task 状态
+@property (nonatomic, assign) HttpTaskStatus taskStatus;
+
+
+//请求处理插件
+@property (nonatomic,   copy) id <HttpRequestBuildProtocol> requestPlugin;
+
 //响应解析插件
+@property (nonatomic,   copy) id <HttpResponseHandleProtocol> responsePlugin;
+
 
 //cache代理
 @property (nonatomic,  weak) id <MFWHttpTaskCacheDataProtocol> cacheHandler;    //缓存处理插件
 
-//observerDelegate
+//监听状态的代理
 @property (nonatomic,  weak) id <MFWHttpTaskObseverDelegate>observerDelegate;
 
-//blocks
+//任务完成的Block
 @property (nonatomic,  copy) MFWHttpTaskCompletion compBlock;
+
+//进度条Block只在下载或者上传类型的MFWHttpTask才会有作用
 @property (nonatomic,  copy) MFWHttpTaskProgerssBlock progerssBlock;
 
 //获取对应的资源ID
-@property (nonatomic, readonly) NSString *resourceID;
-@property (nonatomic, assign)   BOOL allowRepeat;//是否允许重复请求
+@property (nonatomic, readonly,copy) NSString *identifier;
 
-@property (nonatomic, strong) NSDictionary<NSString *, NSURL *> *uploadData; //only uploadTaskType use
+//是否允许重复请求
+@property (nonatomic, assign) BOOL allowRepeat;
 
+ //为你需要上传的文件指定  name (mutliPart协议规定多文件上传要指定name 以帮助服务器做资源区分) 和 NSURL（本地文件路径）
+@property (nonatomic, strong) NSDictionary<NSString *, NSURL *> *uploadData;
+
+//如果是下载任务的时候 为你的下载的文件指定一个保存的路径,不能为空否则下载的文件不会被保存,如果这个目录不存在会自动为你创建该目录
+@property (nonatomic, copy) NSString *saveDownloadFilePath;
+
+//如果是下载任务的时候 为你的下载的文件指定一个保存的文件名,如果为空则会用服务器的资源名代替。
+@property (nonatomic, copy) NSString *saveDownloadFileName;
 
 
 /*

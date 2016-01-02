@@ -53,13 +53,6 @@ static NSString * const last_modified_key = @"Last-Modified";
     return self.header_fields;
 }
 
-
-- (NSString *)description
-{
-    return @"";
-}
-
-
 @end
 
 @interface MFWHttpResponse ()
@@ -88,6 +81,11 @@ static NSString * const last_modified_key = @"Last-Modified";
 
 -(NSString *)responseString
 {
+    if (!self.responseData)
+    {
+        return @"";
+    }
+    
     NSData *data = [NSJSONSerialization dataWithJSONObject:self.responseData
                                                       options:NSJSONWritingPrettyPrinted
                                                         error:nil];

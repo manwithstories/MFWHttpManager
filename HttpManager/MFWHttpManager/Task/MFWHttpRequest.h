@@ -69,8 +69,6 @@ typedef NS_ENUM(NSUInteger, HttpMethod)
 
 - (NSString *)httpMethodString;
 
-//返回该请求的唯一标识
-- (NSString *)requestIdentifier;
 
 
 @end

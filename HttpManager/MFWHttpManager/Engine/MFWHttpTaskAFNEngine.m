@@ -29,6 +29,13 @@ typedef enum{
     MapTaskStatusCanceled =  4
 }MapTaskStatus;
 
+typedef NS_ENUM(NSUInteger, MapTaskType)
+{
+    MapTaskTypeRequest = 0,
+    MapTypeDownload ,
+    MapTypeUpload
+};
+
 
 const char *MFWHttpTaskResponseKEY = "_response";
 @implementation MFWHttpTask(MFWHttpTaskAFNEngine)
@@ -73,11 +80,11 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 @property(nonatomic,assign) MapTaskStatus mapTaskStatus;
 @property(nonatomic,  copy) NSString *url;
 @property(nonatomic,strong) NSDictionary *parameters;
-@property(nonatomic,strong) NSDictionary *requestHeaders;
+@property(nonatomic,strong) NSDictionary<NSString*,NSString*> *requestHeaders;
 @property(nonatomic,  copy) NSString *httpMethodString;
 @property(nonatomic,strong) id responseObj;
 @property(nonatomic,strong) NSError *error;
-@property(nonatomic,assign) HttpTaskType type;
+@property(nonatomic,assign) MapTaskType type;
 @property(nonatomic,  copy) id <HttpRequestBuildProtocol> requestPlugin;//公有前插件
 @property(nonatomic,  copy) id <HttpResponseHandleProtocol> responsePlugin;//公有后插件
 @property(nonatomic,assign) NSTimeInterval timeOut;
@@ -100,7 +107,6 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 
 - (void)dealloc
 {
-    NSLog(@"%@ 释放了",self);
     [_progress removeObserver:self forKeyPath:@"completedUnitCount"];
 }
 
@@ -159,6 +165,7 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
     httpTask.responsePlugin = nil;
 }
 
+
 #pragma mark - 请求完成的回调
 - (void)_complection
 {
@@ -171,24 +178,6 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
             aTask.compBlock(self.error == nil?YES:NO, self.error.code==NSURLErrorCancelled?YES:NO,self.responseObj,self.error);
         }
         aTask.taskStatus = (int)self.mapTaskStatus;
-        switch (aTask.taskType) {
-            case HttpTaskTypeDownload:
-            {
-                if(aTask.taskStatus == HttpTaskStatusSucceeded && aTask.cacheHandler != nil && [aTask.cacheHandler respondsToSelector:@selector(saveDownloadFile:dataId:)]){
-                    [aTask.cacheHandler saveDownloadFile:self.downLoadFilePath dataId:aTask.resourceID];
-                }
-            }
-                break;
-                
-            default:
-            {
-                if(aTask.taskStatus == HttpTaskStatusSucceeded  &&  aTask.cacheHandler != nil && [aTask.cacheHandler respondsToSelector:@selector(saveCacheData:dataId:)]){
-                    [aTask.cacheHandler saveCacheData:self.responseObj dataId:aTask.resourceID];
-                }
-            }
-                break;
-        }
-
     }];
     [self _destroy];
 }
@@ -254,6 +243,27 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
     }
 }
 
+#pragma mark override downLoadFilePath
+- (void)setDownLoadFilePath:(NSURL *)downLoadFilePath
+{
+    _downLoadFilePath = downLoadFilePath;
+    if(downLoadFilePath != nil && self.type == MapTypeDownload){
+        NSString *fileName = [self.sessionTask.response suggestedFilename];
+        [self.tasks enumerateObjectsUsingBlock:^(MFWHttpTask * _Nonnull aTask, NSUInteger idx, BOOL * _Nonnull stop) {
+            if([aTask.saveDownloadFileName length]<1 && [fileName length]>0){
+                aTask.saveDownloadFileName = fileName;
+            }
+            if([aTask.saveDownloadFileName length]>0 && [aTask.saveDownloadFilePath length]>0){
+                NSFileManager *fileManager = [NSFileManager defaultManager];
+                NSError *error = nil;
+                NSURL *targetURL= [NSURL fileURLWithPath:[NSString stringWithFormat:@"%@/%@",aTask.saveDownloadFilePath,aTask.saveDownloadFileName]];
+                if(![fileManager fileExistsAtPath:[NSString stringWithFormat:@"%@/%@",aTask.saveDownloadFilePath,aTask.saveDownloadFileName]]){
+                    [fileManager copyItemAtURL:downLoadFilePath  toURL:targetURL error:&error];
+                }
+            }
+        }];
+    }
+}
 
 #pragma mark kvo
 -(void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
@@ -270,11 +280,14 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 - (void)setProgress:(NSProgress *)progress
 {
     _progress = progress;
-    [_progress addObserver:self forKeyPath:@"completedUnitCount" options:NSKeyValueObservingOptionNew context:nil];
+    if(_progress != nil){
+        [_progress addObserver:self forKeyPath:@"completedUnitCount" options:NSKeyValueObservingOptionNew context:nil];
+    }
 }
 
 @end
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define  BACKGROUND_SESSION_IDENTIFIER @"com.mafengwo.mobile.backgroundSession"
 #define  TEMP_DOWNLOAD_TABLE_PATH @"/Documents/.TempDownloadTable"
 #define  TEMP_DOWNLOAD_TABLE_FILE_NAME @"download.plist"
 #define  TEMP_DOWNLOAD_FILE_PATH @"/Library/Caches/.TempDownload"
@@ -311,11 +324,11 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
     if(self){
         _sessionManager = [AFHTTPSessionManager manager];
         if([NSURLSessionConfiguration respondsToSelector:@selector(backgroundSessionConfigurationWithIdentifier:)]){
-            _backgroundSessionManager = [[AFHTTPSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:@"com.mafengwo.mobile"]];
+            _backgroundSessionManager = [[AFHTTPSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:BACKGROUND_SESSION_IDENTIFIER]];
         }else{
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated"
-            _backgroundSessionManager = [[AFHTTPSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration backgroundSessionConfiguration:@"com.mafengwo.mobile"]];
+            _backgroundSessionManager = [[AFHTTPSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration backgroundSessionConfiguration:BACKGROUND_SESSION_IDENTIFIER]];
 #pragma clang diagnostic pop
         }
         [self _createTempDownloadTableDirectory];
@@ -333,12 +346,12 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 #pragma mark 获取MapTask
 - (__MFWAFNMapTask*)_getMapTaskByHttpTask:(MFWHttpTask *)httpTask
 {
-    if([httpTask.resourceID length]<1){
+    if([httpTask.identifier length]<1){
         NSAssert(NO, @"httpTask resourceID can't be a  nil");
         return nil;
     }else{
-        if([self.repeatRequestFilter objectForKey:httpTask.resourceID] != nil && [[self.repeatRequestFilter objectForKey:httpTask.resourceID] isMemberOfClass:[__MFWAFNMapTask class]]){
-            __MFWAFNMapTask *mapTask = [self.repeatRequestFilter objectForKey:httpTask.resourceID];
+        if([self.repeatRequestFilter objectForKey:httpTask.identifier] != nil && [[self.repeatRequestFilter objectForKey:httpTask.identifier] isMemberOfClass:[__MFWAFNMapTask class]]){
+            __MFWAFNMapTask *mapTask = [self.repeatRequestFilter objectForKey:httpTask.identifier];
             if(![mapTask.tasks containsObject:httpTask]){
                 [mapTask addHttpTask:httpTask];
                 [self.taskList addPointer:(__bridge void*)httpTask];
@@ -346,12 +359,12 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
             return mapTask;
         }else{
             __MFWAFNMapTask *mapTask = [[__MFWAFNMapTask alloc] init];
-            mapTask.identifier = httpTask.resourceID;
+            mapTask.identifier = httpTask.identifier;
             mapTask.url = httpTask.request.URLString;
             mapTask.parameters = httpTask.request.params;
             mapTask.requestHeaders = httpTask.request.header.httpRequestHeaderFields;
             mapTask.httpMethodString = httpTask.request.httpMethodString;
-            mapTask.type = httpTask.taskType;
+            mapTask.type = (int)httpTask.taskType;
             mapTask.requestPlugin = self.requestPlugin;
             mapTask.responsePlugin = self.responsePlugin;
             mapTask.timeOut = httpTask.request.reqeustTimeout;
@@ -360,7 +373,7 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
             if(httpTask.taskType == HttpTaskTypeUpload){
                 mapTask.uploadData = httpTask.uploadData;
             }
-            [self.repeatRequestFilter setObject:mapTask forKey:httpTask.resourceID];
+            [self.repeatRequestFilter setObject:mapTask forKey:httpTask.identifier];
             return mapTask;
         }
     }
@@ -369,14 +382,17 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 #pragma mark - 入口
 - (void)executeTask:(MFWHttpTask *)httpTask complection:(MFWHttpTaskCompletion)completion
 {
+    if (httpTask == nil)
+    {
+        return;
+    }
     if(completion != nil){
         httpTask.compBlock = completion;
     }
+    
     if(httpTask.requestPlugin != nil){
         httpTask.requestPlugin.requestBuildBlock(httpTask);
     }
-    
-    self.sessionManager.requestSerializer.timeoutInterval = httpTask.request.reqeustTimeout;
    LOCK(__MFWAFNMapTask *mapTask = [self _getMapTaskByHttpTask:httpTask]);
     switch (httpTask.taskType) {
         case HttpTaskTypeRequest:
@@ -409,10 +425,10 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
         mapTask.mapTaskStatus = HttpTaskStatusAdded;
         NSURLSessionDataTask *dataTask = nil;
         NSError *error = nil;
-        NSMutableURLRequest *request = [self.backgroundSessionManager.requestSerializer requestWithMethod:mapTask.httpMethodString URLString:mapTask.url parameters:mapTask.parameters error:&error];
+        NSMutableURLRequest *request = [self.sessionManager.requestSerializer requestWithMethod:mapTask.httpMethodString URLString:mapTask.url parameters:mapTask.parameters error:&error];
         request.timeoutInterval = mapTask.timeOut;
         [[mapTask.requestHeaders allKeys] enumerateObjectsUsingBlock:^(NSString *key, NSUInteger idx, BOOL * _Nonnull stop) {
-            id value = [mapTask.requestHeaders valueForKey:key];
+            NSString *value = [mapTask.requestHeaders valueForKey:key];
             [request addValue:value forHTTPHeaderField:key];
         }];
         if(error == nil){
@@ -443,13 +459,15 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
         NSURLSessionDownloadTask *downloadSessionTask = nil;
         mapTask.mapTaskStatus = MapTaskStatusAdded;
         MFWHttpTaskAFNEngine *wself = self;
+        
         if(data != nil){
             downloadSessionTask =  [self.backgroundSessionManager downloadTaskWithResumeData:data progress:nil destination:^NSURL *(NSURL *targetPath, NSURLResponse *response) {
+                //只有下载成功才会走这里
+                mapTask.downLoadFilePath = targetPath;
                 return targetPath;
             } completionHandler:^(NSURLResponse * response, NSURL * filePath, NSError * error) {
                 MFWHttpTaskAFNEngine *sself = wself;
                 mapTask.error = error;
-                mapTask.downLoadFilePath = filePath;
                 mapTask.mapTaskStatus = error == nil?MapTaskStatusSucceeded:MapTaskStatusFailed;
                 if(error == nil){
                     [sself _clearDownloadLogByResourceId:mapTask.identifier];
@@ -460,16 +478,17 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
             NSMutableURLRequest *request = [self.backgroundSessionManager.requestSerializer requestWithMethod:mapTask.httpMethodString URLString:mapTask.url parameters:mapTask.parameters error:&error];
             request.timeoutInterval = mapTask.timeOut;
             [[mapTask.requestHeaders allKeys] enumerateObjectsUsingBlock:^(NSString *key, NSUInteger idx, BOOL * _Nonnull stop) {
-                id value = [mapTask.requestHeaders valueForKey:key];
+                NSString *value = [mapTask.requestHeaders valueForKey:key];
                 [request addValue:value forHTTPHeaderField:key];
             }];
             if(error == nil){
                 downloadSessionTask =  [self.backgroundSessionManager downloadTaskWithRequest:request progress:nil destination:^NSURL *(NSURL *targetPath, NSURLResponse *response) {
+                    //只有下载成功才会走这里
+                    mapTask.downLoadFilePath = targetPath;
                     return targetPath;
                 } completionHandler:^(NSURLResponse * response, NSURL * filePath, NSError * error) {
                     MFWHttpTaskAFNEngine *sself = wself;
                     mapTask.error = error;
-                    mapTask.downLoadFilePath = filePath;
                     mapTask.mapTaskStatus = error == nil?MapTaskStatusSucceeded:MapTaskStatusFailed;
                     if(error == nil){
                         [sself _clearDownloadLogByResourceId:mapTask.identifier];
@@ -508,9 +527,10 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 - (void)_createTempDownloadTableDirectory
 {
     NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSString *path = [NSString stringWithFormat:@"%@%@",NSHomeDirectory(),TEMP_DOWNLOAD_TABLE_PATH];
+    NSString *path = [NSString stringWithFormat:@"%@%@/%@",NSHomeDirectory(),TEMP_DOWNLOAD_TABLE_PATH,@"123"];
     if(![fileManager fileExistsAtPath:path]){
-        [fileManager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:NULL];
+        NSError *error =nil;
+        [fileManager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:&error];
     }
 }
 
@@ -583,15 +603,19 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
         } error:&error];
         request.timeoutInterval = mapTask.timeOut;
         [[mapTask.requestHeaders allKeys] enumerateObjectsUsingBlock:^(NSString *key, NSUInteger idx, BOOL * _Nonnull stop) {
-            id value = [mapTask.requestHeaders valueForKey:key];
+            NSString *value = [mapTask.requestHeaders valueForKey:key];
             [request addValue:value forHTTPHeaderField:key];
         }];
-        self.sessionManager.responseSerializer = [AFHTTPResponseSerializer serializer];
         if(error == nil){
             mapTask.mapTaskStatus = HttpTaskStatusAdded;
             NSURLSessionUploadTask *uploadDataTask = nil;
-            NSProgress *aProgress = nil;
-            uploadDataTask = [self.sessionManager uploadTaskWithStreamedRequest:request progress:&aProgress completionHandler:^(NSURLResponse * _Nonnull response, id  _Nonnull responseObject, NSError * _Nonnull error) {
+            uploadDataTask = [self.sessionManager uploadTaskWithStreamedRequest:request progress:^(NSProgress *aProgress){
+                if(mapTask.progress == nil){
+                    mapTask.progress = [[NSProgress alloc] init];
+                }
+                mapTask.progress.totalUnitCount = aProgress.totalUnitCount;
+                mapTask.progress.completedUnitCount = aProgress.completedUnitCount;
+            }completionHandler:^(NSURLResponse * _Nonnull response, id  _Nonnull responseObject, NSError * _Nonnull error){
                 mapTask.responseObj = responseObject;
                 mapTask.error = error;
                 mapTask.mapTaskStatus =  error == nil ? MapTaskStatusSucceeded : MapTaskStatusFailed;
@@ -599,8 +623,9 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
             uploadDataTask.mFWHttpTaskAFNEngine_resourceID = mapTask.identifier;
             mapTask.sessionTask = uploadDataTask;
             [uploadDataTask resume];
-            mapTask.progress = aProgress;
             mapTask.mapTaskStatus = MapTaskStatusStarted;
+        }else{
+            NSAssert(NO, @"创建上传请求失败");
         }
     }
 }
@@ -642,8 +667,8 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 
 - (void)cancelAllTask
 {
-    [self.httpTasks enumerateObjectsUsingBlock:^(MFWHttpTask * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        [self cancelTask:obj];
+    [[self.taskList allObjects] enumerateObjectsUsingBlock:^(MFWHttpTask * _Nonnull aTask, NSUInteger idx, BOOL * _Nonnull stop) {
+        [self cancelTask:aTask];
     }];
 }
 

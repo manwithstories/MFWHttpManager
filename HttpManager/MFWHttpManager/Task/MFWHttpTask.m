@@ -7,19 +7,17 @@
 #import "MFWHttpResponse.h"
 #import "MFWHttpTaskAFNEngine.h"
 
-#define separator @"$#+#$"
+#define separator @"$#@#$"
 
-@interface MFWHttpTask ()
+@interface MFWHttpTask()
+@property (nonatomic,readonly,copy) NSString *resourceId;
 @end
 
 @implementation MFWHttpTask
 @synthesize response = _response;
-@synthesize resourceID = _resourceID;
+@synthesize identifier = _identifier;
+@synthesize resourceId = _resourceId;
 
-- (void)dealloc
-{
-    NSLog(@"%@ 释放了",self);
-}
 
 - (instancetype)init
 {
@@ -32,6 +30,7 @@
     }
     return self;
 }
+
 
 - (NSString *)taskTypeString
 {
@@ -75,13 +74,14 @@
 }
 
 
+
 #pragma mark - load cache data
 //读取缓存数据
 - (void)loadCacheDataWithComplecton:(MFWHttpTaskCacheCompletion)completion
 {
     if (self.cacheHandler && [self.cacheHandler respondsToSelector:@selector(loadCacheDataWithDataId:completion:)])
     {
-         [self.cacheHandler loadCacheDataWithDataId:self.allowRepeat?[self.resourceID componentsSeparatedByString:separator][0]:self.resourceID completion:completion];
+         [self.cacheHandler loadCacheDataWithDataId:self.resourceId completion:completion];
     }
 }
 
@@ -90,29 +90,40 @@
 {
     if (self.cacheHandler && [self.cacheHandler respondsToSelector:@selector(cleanCacheDataWithDataId:)])
     {
-        return [self.cacheHandler cleanCacheDataWithDataId:self.allowRepeat?[self.resourceID componentsSeparatedByString:separator][0]:self.resourceID];
+        return [self.cacheHandler cleanCacheDataWithDataId:self.resourceId];
     }
     return NO;
 }
 
 
-#pragma mark - 根据 MFWHttpTask 返回对应的资源ID 规则是 url+httpMethod+params 做base64
-- (NSString *)resourceID
+#pragma mark - override Getter resourceId
+//根据 MFWHttpTask 返回对应的资源ID 规则是 url+httpMethod+params 做base64
+- (NSString *)resourceId
 {
-    if([_resourceID length]<1){
+    if([_resourceId length]<1){
         NSString *str = [NSString stringWithFormat:@"%@%lu%@",self.request.URLString,(unsigned long)self.request.httpMethod,self.request.params];
         NSString *dataID =  [str stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
         NSData *data = [dataID dataUsingEncoding:NSUTF8StringEncoding];
         NSString *resourceId = [data base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
-        _resourceID = resourceId;
+        _resourceId = resourceId;
+    }
+    return _resourceId;
+}
+
+#pragma mark - override identifier
+- (NSString *)identifier
+{
+    if([_identifier length]<1){
         if(self.allowRepeat){
             NSDateFormatter  *dateformatter = [[NSDateFormatter alloc] init];
             [dateformatter setDateFormat:@"YYYY-MM-dd hh:mm:ss:SSS"];
             NSString *timeNow = [dateformatter stringFromDate:[NSDate date]];
-            _resourceID = [NSString stringWithFormat:@"%@%@%@%@%d",_resourceID,separator,timeNow,separator,(arc4random() % INT_MAX)];
+            _identifier = [NSString stringWithFormat:@"%@%@%@%@%d",self.resourceId,separator,timeNow,separator,(arc4random() % INT_MAX)];
+        }else{
+            _identifier = self.resourceId;
         }
     }
-    return _resourceID;
+    return _identifier;
 }
 
 #pragma mark - override getter allowRepeat
@@ -122,6 +133,19 @@
         return YES;
     }else{
         return _allowRepeat;
+    }
+}
+
+#pragma mark override setter
+- (void)setSaveDownloadFilePath:(NSString *)saveDownloadFilePath
+{
+    _saveDownloadFilePath = saveDownloadFilePath;
+    if([saveDownloadFilePath length]>1){
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        if(![fileManager fileExistsAtPath:saveDownloadFilePath]){
+          NSError *error =nil;
+          [fileManager createDirectoryAtPath:saveDownloadFilePath withIntermediateDirectories:YES attributes:nil error:&error];
+        }
     }
 }
 
@@ -149,6 +173,18 @@
             if(self.observerDelegate != nil && [self.observerDelegate respondsToSelector:@selector(httpTaskStartedSucceeded:)]){
                 [self.observerDelegate httpTaskStartedSucceeded:self];
             }
+            
+            if(self.taskType == HttpTaskTypeRequest){
+                if(self.cacheHandler != nil && [self.cacheHandler respondsToSelector:@selector(saveCacheData:dataId:)]){
+                    [self.cacheHandler saveCacheData:self.response.responseData dataId:self.resourceId];
+                }
+            }
+            
+            if(self.taskType == HttpTaskTypeDownload){
+                if(self.cacheHandler != nil && [self.cacheHandler respondsToSelector:@selector(saveDownloadFile:dataId:)]){
+                    [self.cacheHandler saveDownloadFile: [NSURL fileURLWithPath:[NSString stringWithFormat:@"%@/%@",self.saveDownloadFilePath,self.saveDownloadFileName]] dataId:self.resourceId];
+                }
+            }
         }
             break;
         case HttpTaskStatusFailed:
@@ -172,7 +208,6 @@
         }
             break;
     }
-
 }
 
 @end

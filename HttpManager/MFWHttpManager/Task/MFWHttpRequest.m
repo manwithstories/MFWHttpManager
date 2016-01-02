@@ -177,27 +177,4 @@ static NSString *const user_agent_key = @"";
 }
 
 
-- (NSString *)requestIdentifier
-{
-    if (!self.params)
-    {
-        return self.URLString;
-    }
-    
-    NSData  *paramsJsonData = [NSJSONSerialization dataWithJSONObject:self.params
-                                                              options:0
-                                                                error:nil];
-    
-    NSString *paramsString = [[NSString alloc] initWithData:paramsJsonData
-                                             encoding:NSUTF8StringEncoding];
-    
-    return [NSString stringWithFormat:@"%@%@",self.URLString,paramsString];
-    
-   
-    
-
-    
-}
-
-
 @end
