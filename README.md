@@ -12,7 +12,7 @@ Introduction
 
 Features
 ==============
-- **结构**:分为三个部分,详见下面列出类的.h文件。代码即注释,你们懂得😊
+- **结构**:分为三个部分。
   - **Task(任务)**:MFWHttpTask
   - **Engine(流水线引擎)**: MFWHttpEngine
   - **plugin(插件)**: 1、Request插件:MFWRequestBaseBuilder  2、Response插件:MFWResponseBaseHandler
@@ -27,7 +27,7 @@ Features
 - **特性**:
   - **插件机制**: 每一个MFWHttpTask对象可以捆绑Request插件(在请求前做一些事情,比如添加公共参数,Xauth认证)和Response插件(在请求完成之后做一些事情,比如通知一些界面改变)。
   
-  - **一对多管理机制**: 假如你创建了N个MFWHttpTask对象同时访问同一个资源地址(www.mafengwo.com/poilist.php?page=1&size=20)。 请求URL,参数,HttpMethod完全一样,MFWHttpEngine不会发送N个请求,只会发送一个网络请求,剩下的MFWHttpTask都会在队列中监听请求的状态,并在完成后得到数据。最大限度的节省了系统开销。
+  - **请求一对多管理机制**:设想这样一个场景,你创建了一个下载任务去下载一个资源(假设是:http://www.mafengwo.com/aaa.zip  资源大小为500M)当下载进行到了一半的时候,这个时候又一个任务被创建了,也去下载这一个资源。新创建的任务如果重新去下载话那岂不是一件特别浪费系统资源的事情吗!？。MFWHttpManager实现了一对多的管理机制，当针对于同一资源的MFWHttpTask的任务正在进行当中的时候,如果新创建的MFWHttpTask还是请求正在进行的资源。那么新的请求不会被执行,而是放在队列中监听正在进行的MFWHttpTask的状态,当请求被执行完成的时候他们都能获得相应的回调。这种管理机制，只限于普通请求MFWHttpTask及下载请求的MFWHttpTask。并且你也可以通过设置MFWHttpTask的allowRepeat属性来关闭或者开启这种管理机制。
   
   - **下载支持断点续传**: 支持下载断点续传,无需做专门设置,创建一个下载类型的MFWHttpTask任务,您的下载请求就会自动支持断点续传。(当然还得服务器支持下载断点续传功能)
   
