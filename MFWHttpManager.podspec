@@ -10,9 +10,9 @@ s.requires_arc = true
 
 s.xcconfig = { 'ONLY_ACTIVE_ARCH' => 'NO' }
 
-s.public_header_files = 'HttpManager/MFWHttpManager/*.h'
+s.public_header_files = ['MFWHttpManager/Engine/*.h','MFWHttpManager/Plugin/Request/*.h','MFWHttpManager/Plugin/Response/*.h','MFWHttpManager/Task/*.h']
 
-s.source_files = 'HttpManager/MFWHttpManager/*.{h,m}'
+s.source_files = ['MFWHttpManager/Engine/*.{h,m}','MFWHttpManager/Engine/Private/*.{h,m}','MFWHttpManager/Plugin/Request/*.{h,m}','MFWHttpManager/Plugin/Response/*.{h,m}','MFWHttpManager/Task/*.{h,m}']
 
 s.frameworks = ['MobileCoreServices', 'CoreGraphics', 'Security', 'SystemConfiguration']
 
