@@ -12,7 +12,16 @@
 
 #endif /* MFWHttpManager_h */
 
-#import "MFWHttpTaskEngine.h"
+//任务
 #import "MFWHttpDataTask.h"
+#import "MFWRequest.h"
+#import "MFWResponse.h"
+
+//插件
 #import "MFWResponseHandlerPipeline.h"
 #import "MFWRequestBuilderPipeline.h"
+#import "MFWRequestBaseBuilder.h"
+#import "MFWResponseBaseHandler.h"
+
+//流水线处理引擎
+#import "MFWHttpTaskEngine.h"

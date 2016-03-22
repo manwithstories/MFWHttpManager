@@ -317,17 +317,15 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 {
     OSSpinLock _lock;
 }
-@synthesize HTTPMaximumConnectionsPerHost = _HTTPMaximumConnectionsPerHost;
-@synthesize maxConcurrentOperationCount = _maxConcurrentOperationCount;
+@synthesize HTTPMaximumConnectionsPerHost = _HTTPMaximumConnectionsPerHost; //Default 4 setting by AFN
+@synthesize maxConcurrentOperationCount = _maxConcurrentOperationCount; //Default 1 setting by AFN
 
 
 - (instancetype)init
 {
     self = [super init];
     if(self){
-        _HTTPMaximumConnectionsPerHost = 4;
         _sessionManager = [AFHTTPSessionManager manager];
-        _sessionManager.session.configuration.HTTPMaximumConnectionsPerHost = self.HTTPMaximumConnectionsPerHost;
         if([NSURLSessionConfiguration respondsToSelector:@selector(backgroundSessionConfigurationWithIdentifier:)]){
             _backgroundSessionManager = [[AFHTTPSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:BACKGROUND_SESSION_IDENTIFIER]];
         }else{
@@ -339,7 +337,7 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
         _backgroundSessionManager.session.configuration.HTTPMaximumConnectionsPerHost = self.HTTPMaximumConnectionsPerHost;
         [self _createTempDownloadTableDirectory];
         _tempDownloadTable = [self _readTempDownloadTablePlist];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_synchronTempDownloadTable) name:UIApplicationDidEnterBackgroundNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_synchronizedTempDownloadTable) name:UIApplicationDidEnterBackgroundNotification object:nil];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_filterRemoveMapTask:) name:MFWMAPTASK_DESTROY_NOTIFICATION object:nil];
         _repeatRequestFilter = [[NSMutableDictionary alloc] init];
@@ -704,6 +702,9 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 #pragma mark override setter HTTPMaximumConnectionsPerHost
 - (void)setHTTPMaximumConnectionsPerHost:(NSUInteger)HTTPMaximumConnectionsPerHost
 {
+    if(HTTPMaximumConnectionsPerHost < 1){
+        return;
+    }
     _HTTPMaximumConnectionsPerHost = HTTPMaximumConnectionsPerHost;
     
     if(self.sessionManager.session.configuration != nil){
