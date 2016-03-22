@@ -63,8 +63,8 @@
     for(int i=0;i<100;i++){
         MFWHttpDataTask *task =  [[MFWHttpDataTask alloc] init];
         
-        task.request.requeustTimeout = 10;
-        task.request.httpMethod = HttpMethodGet;
+        task.request.requestTimeout = 10;
+        task.request.httpMethod = MFWRequestHttpMethodGet;
         task.request.URLString = @"http://182.92.72.114/source/plugin/aimdev/api/simulate/simulatelist.php";
         
         TestPrivateRequstPugin *privateRequestPlugin = [TestPrivateRequstPugin builder];

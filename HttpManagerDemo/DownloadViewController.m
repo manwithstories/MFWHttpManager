@@ -74,8 +74,8 @@
     __weak DownloadViewController *wself = self;
     if(!btn.selected){
         self.task1 = [[MFWHttpDataTask alloc] init];
-        self.task1.request.requeustTimeout = 10;
-        self.task1.request.httpMethod = HttpMethodGet;
+        self.task1.request.requestTimeout = 10;
+        self.task1.request.httpMethod = MFWRequestHttpMethodGet;
         self.task1.request.URLString = DOWN_FILE;
         self.task1.taskType = HttpTaskTypeDownload;
         
@@ -101,8 +101,8 @@
    
     if(!btn.selected){
         self.task2 = [[MFWHttpDataTask alloc] init];
-        self.task2.request.requeustTimeout = 10;
-        self.task2.request.httpMethod = HttpMethodGet;
+        self.task2.request.requestTimeout = 10;
+        self.task2.request.httpMethod = MFWRequestHttpMethodGet;
         self.task2.request.URLString = DOWN_FILE;
         self.task2.taskType = HttpTaskTypeDownload;
          NSString *path = [NSString stringWithFormat:@"%@%@",NSHomeDirectory(),DOWN_PATH];

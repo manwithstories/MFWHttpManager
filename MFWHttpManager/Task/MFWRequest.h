@@ -32,14 +32,14 @@ static NSString *const user_agent_key = @"User-Agent";
   可以扩展与修改请求头
  */
 
-typedef NS_ENUM(NSUInteger, HttpMethod)
+typedef NS_ENUM(NSUInteger, MFWRequestHttpMethod)
 {
-    HttpMethodGet = 0,
-    HttpMethodPost,
-    HttpMethodPut,
-    HttpMethodDelete,
-    HttpMethodOptions,
-    HttpMethodHead
+    MFWRequestHttpMethodGet = 0,
+    MFWRequestHttpMethodPost,
+    MFWRequestHttpMethodPut,
+    MFWRequestHttpMethodDelete,
+    MFWRequestHttpMethodOptions,
+    MFWRequestHttpMethodHead
 };
 
 
@@ -48,12 +48,12 @@ typedef NS_ENUM(NSUInteger, HttpMethod)
 
 @property(nonatomic, strong) NSDictionary<NSString *,NSString*> *params;    //请求参数
 @property(nonatomic, strong) MFWHttpRequestHeader *header;      //请求头
-@property(nonatomic, assign) HttpMethod httpMethod;             //请求方式
+@property(nonatomic, assign) MFWRequestHttpMethod httpMethod;             //请求方式
 @property(nonatomic, strong) NSString *URLString;                     //url
-@property(nonatomic, assign) NSTimeInterval requeustTimeout;     //请求过期时间
+@property(nonatomic, assign) NSTimeInterval requestTimeout;     //请求过期时间
 
 - (instancetype)initWithURLString:(NSString *)URLString
-                           method:(HttpMethod)method
+                           method:(MFWRequestHttpMethod)method
                            params:(NSDictionary<NSString*,NSString*> *)params;
 
 

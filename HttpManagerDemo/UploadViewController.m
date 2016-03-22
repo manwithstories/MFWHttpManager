@@ -23,7 +23,7 @@
     [super viewDidLoad];
 
     self.engine = [[MFWHttpTaskEngine alloc] init];
-    MFWHttpDataTask *task = [MFWHttpDataTask taskWithURLString:@"http://172.18.20.193/upload.php" method:HttpMethodPost params:nil taskType:HttpTaskTypeUpload];
+    MFWHttpDataTask *task = [MFWHttpDataTask taskWithURLString:@"http://172.18.20.193/upload.php" method:MFWRequestHttpMethodPost params:nil taskType:HttpTaskTypeUpload];
    
     NSURL *url = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"Info" ofType:@"plist"]];
     task.uploadData = @{@"aaa": url,@"bbb":url,@"ccc":url};

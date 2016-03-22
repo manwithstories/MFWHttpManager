@@ -371,7 +371,7 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
             mapTask.type = (int)httpTask.taskType;
             mapTask.requestPlugin = self.requestPlugin;
             mapTask.responsePlugin = self.responsePlugin;
-            mapTask.timeOut = httpTask.request.requeustTimeout;
+            mapTask.timeOut = httpTask.request.requestTimeout;
             [mapTask addHttpTask:httpTask];
             [self.taskList addPointer:(__bridge void*)httpTask];
             if(httpTask.taskType == HttpTaskTypeUpload){

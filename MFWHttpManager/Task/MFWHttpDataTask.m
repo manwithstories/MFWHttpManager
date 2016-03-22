@@ -86,7 +86,7 @@
 
 
 + (MFWHttpDataTask *)taskWithURLString:(NSString *)urlString
-                            method:(HttpMethod)method
+                            method:(MFWRequestHttpMethod)method
                             params:(NSDictionary *)params
                             taskType:(HttpTaskType)taskType
 {

@@ -149,7 +149,7 @@ typedef enum{
  使用方式：可以用于简单的请求任务，也可以作为基础task 创建，再后续增补属性
  */
 + (MFWHttpDataTask *)taskWithURLString:(NSString *)urlString
-                            method:(HttpMethod)method
+                            method:(MFWRequestHttpMethod)method
                             params:(NSDictionary *)params
                             taskType:(HttpTaskType)taskType;
 

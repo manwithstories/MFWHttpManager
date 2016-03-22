@@ -60,7 +60,7 @@
 
 
 - (instancetype)initWithURLString:(NSString *)URLString
-                           method:(HttpMethod)method
+                           method:(MFWRequestHttpMethod)method
                            params:(NSDictionary *)params;
 {
     self = [super init];
@@ -71,7 +71,7 @@
         _httpMethod = method;
         
         _header = [MFWHttpRequestHeader new];
-        _requeustTimeout = 60;
+        _requestTimeout = 60;
     }
     return self;
 }
@@ -104,15 +104,15 @@
 }
 
 
--(HttpMethod)httpMethod
+-(MFWRequestHttpMethod)httpMethod
 {
-    if (_httpMethod < HttpMethodGet)
+    if (_httpMethod < MFWRequestHttpMethodGet)
     {
-        _httpMethod = HttpMethodGet;
+        _httpMethod = MFWRequestHttpMethodGet;
     }
-    else if (_httpMethod > HttpMethodHead)
+    else if (_httpMethod > MFWRequestHttpMethodHead)
     {
-        _httpMethod = HttpMethodGet;
+        _httpMethod = MFWRequestHttpMethodGet;
     }
     return _httpMethod;
 }
@@ -125,22 +125,22 @@
     
     switch (self.httpMethod)
     {
-        case HttpMethodGet:
+        case MFWRequestHttpMethodGet:
             method = @"GET";
             break;
-        case HttpMethodPost:
+        case MFWRequestHttpMethodPost:
             method = @"POST";
             break;
-        case HttpMethodPut:
+        case MFWRequestHttpMethodPut:
             method = @"PUT";
             break;
-        case HttpMethodDelete:
+        case MFWRequestHttpMethodDelete:
             method = @"DELETE";
             break;
-        case HttpMethodHead:
+        case MFWRequestHttpMethodHead:
             method = @"HEAD";
             break;
-        case HttpMethodOptions:
+        case MFWRequestHttpMethodOptions:
             method = @"OPTIONS";
             break;
         default:
