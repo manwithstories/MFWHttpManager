@@ -10,10 +10,11 @@
 
 #import "TestPrivateRequstPugin.h"
 #import "TestPrivateResponsePlugin.h"
+#import "TestPublicResponsePlugin.h"
 #import "MFWHttpManager.h"
 
 
-@interface NormalViewController ()<HttpRequestBuildProtocol>
+@interface NormalViewController ()
 
 @property(nonatomic,strong)UITextView *textView;
 
@@ -48,6 +49,9 @@
     [self.view addSubview:self.textView];
     
     self.engine = [[MFWHttpTaskEngine alloc] init];
+    [self.engine setResponsePlugin:[[TestPublicResponsePlugin alloc] init]];
+    
+    NSLog(@"%@",self.engine);
 }
 
 
@@ -60,7 +64,7 @@
     self.textView.text = @"";
     [self showIndicatorView];
     
-    for(int i=0;i<100;i++){
+    for(int i=0;i<1;i++){
         MFWHttpDataTask *task =  [[MFWHttpDataTask alloc] init];
         
         task.request.requestTimeout = 10;
@@ -71,16 +75,16 @@
         
         task.requestPlugin = [MFWRequestBuilderPipeline builderPipeline:@[privateRequestPlugin]];
         
-        task.responsePlugin = [MFWResponseHandlerPipeline builderPipeline:@[[TestPrivateResponsePlugin handler]]];
+        task.responsePlugin = [MFWResponseHandlerPipeline handlerPipeline:@[[TestPrivateResponsePlugin handler]]];
         
         
         __weak NormalViewController *wself = self;
-        [self.engine executeTask:task complection:^(BOOL succeed, BOOL cancelled, id responeseData, NSError *error) {
+        [self.engine executeTask:task completion:^(MFWHttpDataTask*aTask,BOOL succeed, BOOL cancelled, id responeseData, NSError *error) {
              a++;
             NormalViewController *sself = wself;
            if(succeed){
                NSError *changeError = nil;
-              NSData *dataStr = [NSJSONSerialization dataWithJSONObject:responeseData options:NSJSONWritingPrettyPrinted error:&changeError];
+               NSData *dataStr = responeseData;
               if(changeError == nil){
                   NSString *str = [[NSString alloc] initWithData:dataStr encoding:NSUTF8StringEncoding];
                   sself.textView.text = str;
@@ -93,11 +97,7 @@
             
             btn.userInteractionEnabled = YES;
             [sself hideIndicatorView];
-            
-            [self performSelector:@selector(log) withObject:nil afterDelay:0.1f];
         }];
-       
-        
     }
 }
 

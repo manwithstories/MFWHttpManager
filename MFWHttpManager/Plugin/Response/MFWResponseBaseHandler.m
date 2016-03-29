@@ -5,8 +5,10 @@
 #import "MFWResponseBaseHandler.h"
 
 @implementation MFWResponseBaseHandler
+
 @synthesize responseHandleBlock = _responseHandleBlock;
-@synthesize inBackgroundRun = _inBackgroundRun;
+@synthesize runningInBackground = _runningInBackground;
+
 + (id<HttpResponseHandleProtocol>)handler
 {
     return [[self alloc] init];
@@ -23,4 +25,5 @@
     }
     return handler;
 }
+
 @end

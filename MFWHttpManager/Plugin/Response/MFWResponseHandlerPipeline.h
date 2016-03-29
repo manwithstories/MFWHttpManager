@@ -6,9 +6,17 @@
 #import "MFWHttpDataTask.h"
 #import "MFWResponseBaseHandler.h"
 
-@interface MFWResponseHandlerPipeline : MFWResponseBaseHandler
-@property (nonatomic, strong) NSArray *queue;
+@protocol MFWResponsePipelineHandleCompletionBlock <NSObject>
+
+@property (nonatomic, copy) MFWHttpResponseHandleBlock pipelineHandleCompletionBlock;
+
+@end
+
+@interface MFWResponseHandlerPipeline : MFWResponseBaseHandler <MFWResponsePipelineHandleCompletionBlock>
+
+@property (nonatomic, strong) NSArray<MFWResponseBaseHandler *> *queue;
 
 + (MFWResponseHandlerPipeline *)pipeline;
-+ (MFWResponseHandlerPipeline *)builderPipeline:(NSArray *)pipeline;
++ (MFWResponseHandlerPipeline *)handlerPipeline:(NSArray<MFWResponseBaseHandler *> *)pipeline;
+
 @end

@@ -14,6 +14,11 @@
 #import "MFWResponseHandlerPipeline.h"
 #import  <objc/runtime.h>
 #import <libkern/OSAtomic.h>
+#import "MFWHttpManager.h"
+
+@interface MFWHttpDataTask (PackageMethods)
+- (void)weak_setHttpEngine:(MFWHttpTaskEngine *)engine;
+@end
 
 #define LOCK(...) OSSpinLockLock(&_lock); \
 __VA_ARGS__; \
@@ -26,7 +31,6 @@ typedef enum{
     MapTaskStatusStarted =   2,
     MapTaskStatusSucceeded = 3,
     MapTaskStatusFailed =    4,
-    MapTaskStatusCanceled =  5
 }MapTaskStatus;
 
 typedef NS_ENUM(NSUInteger, MapTaskType)
@@ -39,7 +43,7 @@ typedef NS_ENUM(NSUInteger, MapTaskType)
 const char *MFWHttpTaskResponseKEY = "_response";
 @interface MFWHttpDataTask(MFWHttpTaskAFNEngine)
 //获取对应的资源ID
-@property (nonatomic, assign) HttpTaskStatus taskStatus;                     //task 状态
+@property (nonatomic, assign) MFWHttpTaskStatus taskStatus;                     //task 状态
 @end
 
 
@@ -90,15 +94,14 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 @property(nonatomic,strong) NSDictionary *parameters;
 @property(nonatomic,strong) NSDictionary<NSString*,NSString*> *requestHeaders;
 @property(nonatomic,  copy) NSString *httpMethodString;
-@property(nonatomic,strong) id responseObj;
+@property(nonatomic,strong) NSData *responseData;
 @property(nonatomic,strong) NSError *error;
 @property(nonatomic,assign) MapTaskType type;
-@property(nonatomic,  copy) id <HttpRequestBuildProtocol> requestPlugin;//公有前插件
-@property(nonatomic,  copy) id <HttpResponseHandleProtocol> responsePlugin;//公有后插件
+@property(nonatomic,  copy) MFWResponseHandlerPipeline *responsePlugin;//公有后插件
 @property(nonatomic,assign) NSTimeInterval timeOut;
 @property(nonatomic,strong) NSProgress *progress; // 上传下载用
 @property(nonatomic,strong) NSURL *downLoadFilePath; //下载下来的文件地址;
-@property(nonatomic,strong) NSDictionary<NSString *, NSURL *> *uploadData; //only uploadTaskType use
+@property(nonatomic,strong) NSDictionary<NSString *, id> *uploadData; //only uploadTaskType use
 
 
 - (void)addHttpTask:(MFWHttpDataTask *)httpTask;
@@ -107,7 +110,7 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 
 - (BOOL)isRunning;
 
-- (BOOL)isCancelled;
+- (BOOL)isEmpty;
 
 @end
 
@@ -124,10 +127,9 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 
 - (void)addHttpTask:(MFWHttpDataTask *)httpTask
 {
-    if(httpTask != nil && ![self.tasks containsObject:httpTask]){
-        [self _runRequestPluginFormTask:httpTask];
+    if (httpTask != nil && ![self.tasks containsObject:httpTask]) {
         [self.tasks addObject:httpTask];
-        httpTask.taskStatus = self.sessionTask != nil ? HttpTaskStatusStarted:HttpTaskStatusAdded;
+        httpTask.taskStatus = self.sessionTask != nil ? MFWHttpTaskStatusStarted:MFWHttpTaskStatusAdded;
     }
 }
 
@@ -139,11 +141,21 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
         return;
     }
     
-    if([self.tasks containsObject:httpTask])
-    {
-        httpTask.taskStatus = HttpTaskStatusCanceled;
-        [self.tasks removeObject:httpTask];
-    }
+    dispatch_sync(dispatch_get_main_queue(), ^(){
+         if([self.tasks containsObject:httpTask]){
+             httpTask.error = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:nil];
+             
+             [self.class _runResponsePluginForTask:httpTask publicResponsePlugin:self.responsePlugin completion:^(MFWHttpDataTask *task) {
+                if(task.compBlock != nil){
+                    task.compBlock(task, NO, YES, nil, task.error);
+                }
+                
+                task.taskStatus = MFWHttpTaskStatusCancelled;
+             }];
+            
+             [self.tasks removeObject:httpTask];
+         }
+    });
 }
 
 
@@ -152,64 +164,95 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
     return self.sessionTask != nil ? YES:NO;
 }
 
-- (BOOL)isCancelled
+- (BOOL)isEmpty
 {
     return [self.tasks count] == 0 ? YES:NO;
 }
 
-#pragma mark - 执行前插件
-- (void)_runRequestPluginFormTask:(MFWHttpDataTask *)httpTask
-{
-    if(self.requestPlugin != nil &&
-       self.requestPlugin.requestBuildBlock !=nil)
-    {
-        self.requestPlugin.requestBuildBlock(httpTask);
-    }
-}
 #pragma mark - 执行后插件
-- (void)_runResponsePluginFormTask:(MFWHttpDataTask *)httpTask
++ (void)_runResponsePluginForTask:(MFWHttpDataTask *)httpTask
+             publicResponsePlugin:(MFWResponseHandlerPipeline *)publicResponsePlugin
+                       completion:(void(^)(MFWHttpDataTask *task))completion
 {
-    if(self.responsePlugin != nil &&
-       self.responsePlugin.responseHandleBlock !=nil)
-    {
-        self.responsePlugin.responseHandleBlock(httpTask);
-    }
+    MFWResponseBaseHandler *copiedPrivate = [httpTask.responsePlugin copyWithZone:nil];
+    MFWResponseHandlerPipeline *copiedPublic = [publicResponsePlugin copy];
     
-    if(httpTask.responsePlugin != nil && httpTask.responsePlugin.responseHandleBlock != nil)
-    {
-        httpTask.responsePlugin.responseHandleBlock(httpTask);
+    MFWHttpResponseHandleBlock publicHandleBlock = ^(MFWHttpDataTask *task) {
+        
+        if (copiedPrivate) {
+            MFWResponseHandlerPipeline *privatePipeline = nil;
+            
+            if ([copiedPrivate isKindOfClass:[MFWResponseHandlerPipeline class]]) {
+                privatePipeline = (id)copiedPrivate;
+            }
+            else {
+                privatePipeline = [MFWResponseHandlerPipeline handlerPipeline:@[copiedPrivate]];
+            }
+            
+            [privatePipeline setPipelineHandleCompletionBlock:^(MFWHttpDataTask *task) {
+                if (completion) completion(httpTask);
+            }];
+            
+            privatePipeline.responseHandleBlock(httpTask);
+            
+        }
+        else {
+            if (completion) completion(httpTask);
+        }
+        
+    };
+    
+    if (copiedPublic) {
+        [copiedPublic setPipelineHandleCompletionBlock:publicHandleBlock];
+        copiedPublic.responseHandleBlock(httpTask);
     }
-//    httpTask.responsePlugin = nil;
+    else {
+        publicHandleBlock(httpTask);
+    }
 }
 
 
 #pragma mark - 请求完成的回调
-- (void)_complection
+- (void)_completion
 {
-    MFWResponse *response = [[MFWResponse alloc] initWithUrlResponse:self.sessionTask.response reponseObj:self.responseObj];
-
-    [self.tasks enumerateObjectsUsingBlock:^(MFWHttpDataTask * _Nonnull aTask, NSUInteger idx, BOOL * _Nonnull stop) {
+    MFWHttpManagerAssert([NSThread isMainThread], @"必须保证在主线程调用这个方法 %s", __PRETTY_FUNCTION__);//只是一个断言，AFN 会保证完成的回调一定在主线程当中
+    
+    NSArray *array = [self.tasks mutableCopy];
+    
+    [array enumerateObjectsUsingBlock:^(MFWHttpDataTask * _Nonnull aTask, NSUInteger idx, BOOL * _Nonnull stop) {
+        MFWResponse *response = [[MFWResponse alloc] initWithUrlResponse:self.sessionTask.response responseData:self.responseData];
         aTask.response = response;
-        [self _runResponsePluginFormTask:aTask];
-        if(aTask.compBlock != nil){
-            aTask.compBlock(self.error == nil?YES:NO, self.error.code==NSURLErrorCancelled?YES:NO,self.responseObj,self.error);
+        aTask.error = self.error;
+        
+        if ([aTask.error.domain isEqualToString:NSURLErrorDomain]
+            && aTask.error.code==NSURLErrorCancelled) {
+            
+            [self.class _runResponsePluginForTask:aTask publicResponsePlugin:self.responsePlugin completion:^(MFWHttpDataTask *task) {
+                if(task.compBlock != nil){
+                    task.compBlock(task, NO, YES, nil, task.error);
+                }
+                
+                task.taskStatus = MFWHttpTaskStatusCancelled;
+            }];
         }
-        aTask.taskStatus = (int)self.mapTaskStatus;
-        //为保证在遍历时保证数组元素个数正确同步，开启一个新的runloop 去做这件事情
-        [self.tasks performSelector:@selector(removeObject:) withObject:aTask afterDelay:0.0f];
-    }];
-    [self _destroy];
-}
-
-
-#pragma -mark 取消请求
-- (void)_cancel
-{
-    [self.tasks enumerateObjectsUsingBlock:^(MFWHttpDataTask * _Nonnull aTask, NSUInteger idx, BOOL * _Nonnull stop) {
-        if(aTask.taskStatus != HttpTaskStatusCanceled){
-            aTask.taskStatus = HttpTaskStatusCanceled;
+        else {
+            [self.class _runResponsePluginForTask:aTask publicResponsePlugin:self.responsePlugin completion:^(MFWHttpDataTask *task) {
+                if(aTask.compBlock != nil){
+                    aTask.compBlock(task, task.error == nil?YES:NO, NO, aTask.response.responseData, task.error);
+                }
+                
+                if (task.error) {
+                    task.taskStatus = MFWHttpTaskStatusFailed;
+                }
+                else {
+                    task.taskStatus = MFWHttpTaskStatusSucceeded;
+                }
+            }];
         }
+        
+         [self.tasks removeObject:aTask];
     }];
+
     [self _destroy];
 }
 
@@ -230,32 +273,24 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
         case MapTaskStatusAdded:
         {
             [self.tasks enumerateObjectsUsingBlock:^(MFWHttpDataTask * _Nonnull httpTask, NSUInteger idx, BOOL * _Nonnull stop) {
-                if(httpTask.taskStatus != HttpTaskStatusAdded){
-                    httpTask.taskStatus = HttpTaskStatusAdded;
+                if(httpTask.taskStatus != MFWHttpTaskStatusAdded){
+                    httpTask.taskStatus = MFWHttpTaskStatusAdded;
                 }
             }];
-        }
-        break;
+        } break;
         
         case MapTaskStatusStarted:
         {
             [self.tasks enumerateObjectsUsingBlock:^(MFWHttpDataTask * _Nonnull httpTask, NSUInteger idx, BOOL * _Nonnull stop) {
-                if(httpTask.taskStatus != HttpTaskStatusStarted){
-                    httpTask.taskStatus = HttpTaskStatusStarted;
+                if(httpTask.taskStatus != MFWHttpTaskStatusStarted){
+                    httpTask.taskStatus = MFWHttpTaskStatusStarted;
                 }
             }];
-        }
-        break;
-            
-        case MapTaskStatusCanceled:
-        {
-            [self _cancel];
-        }
-        break;
-            
+        } break;
+
         default://success or failure
         {
-            [self _complection];
+            [self _completion];
         }
         break;
     }
@@ -296,7 +331,8 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 
 @end
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define  BACKGROUND_SESSION_IDENTIFIER @"com.mafengwo.mobile.backgroundSession"
+static NSInteger afn_background_session_index = 0;
+#define  BACKGROUND_SESSION_IDENTIFIER [NSString stringWithFormat:@"com.mafengwo.mobile.backgroundSession.%d", (int)afn_background_session_index++]
 #define  TEMP_DOWNLOAD_TABLE_PATH @"/Documents/.TempDownloadTable"
 #define  TEMP_DOWNLOAD_TABLE_FILE_NAME @"download.plist"
 #define  TEMP_DOWNLOAD_FILE_PATH @"/Library/Caches/.TempDownload"
@@ -317,8 +353,8 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 {
     OSSpinLock _lock;
 }
-@synthesize HTTPMaximumConnectionsPerHost = _HTTPMaximumConnectionsPerHost; //Default 4 setting by AFN
-@synthesize maxConcurrentOperationCount = _maxConcurrentOperationCount; //Default 1 setting by AFN
+@synthesize HTTPMaximumConnectionsPerHost = _HTTPMaximumConnectionsPerHost;
+@synthesize maxConcurrentOperationCount = _maxConcurrentOperationCount;
 
 
 - (instancetype)init
@@ -328,13 +364,20 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
         _sessionManager = [AFHTTPSessionManager manager];
         if([NSURLSessionConfiguration respondsToSelector:@selector(backgroundSessionConfigurationWithIdentifier:)]){
             _backgroundSessionManager = [[AFHTTPSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:BACKGROUND_SESSION_IDENTIFIER]];
-        }else{
+        }
+        else{
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated"
             _backgroundSessionManager = [[AFHTTPSessionManager alloc] initWithSessionConfiguration:[NSURLSessionConfiguration backgroundSessionConfiguration:BACKGROUND_SESSION_IDENTIFIER]];
 #pragma clang diagnostic pop
         }
-        _backgroundSessionManager.session.configuration.HTTPMaximumConnectionsPerHost = self.HTTPMaximumConnectionsPerHost;
+        
+        _sessionManager.responseSerializer = [AFHTTPResponseSerializer serializer];
+        _backgroundSessionManager.responseSerializer = [AFHTTPResponseSerializer serializer];
+        
+        [self setHTTPMaximumConnectionsPerHost:_sessionManager.session.configuration.HTTPMaximumConnectionsPerHost]; // Default 4
+        [self setMaxConcurrentOperationCount:_sessionManager.operationQueue.maxConcurrentOperationCount]; // Default 2
+        
         [self _createTempDownloadTableDirectory];
         _tempDownloadTable = [self _readTempDownloadTablePlist];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_synchronizedTempDownloadTable) name:UIApplicationDidEnterBackgroundNotification object:nil];
@@ -350,41 +393,60 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 #pragma mark 获取MapTask
 - (__MFWAFNMapTask*)_getMapTaskByHttpTask:(MFWHttpDataTask *)httpTask
 {
-    if([httpTask.identifier length]<1){
-        NSAssert(NO, @"httpTask resourceID can't be a  nil");
+    if ([httpTask.identifier length]<1) {
+        MFWHttpManagerAssert(NO, @"httpTask resourceID can't be a  nil");
         return nil;
-    }else{
-        if([self.repeatRequestFilter objectForKey:httpTask.identifier] != nil && [[self.repeatRequestFilter objectForKey:httpTask.identifier] isMemberOfClass:[__MFWAFNMapTask class]]){
+    }
+    else {
+        if ([self.repeatRequestFilter objectForKey:httpTask.identifier] != nil
+           && [[self.repeatRequestFilter objectForKey:httpTask.identifier] isMemberOfClass:[__MFWAFNMapTask class]]) {
             __MFWAFNMapTask *mapTask = [self.repeatRequestFilter objectForKey:httpTask.identifier];
+            
             if(![mapTask.tasks containsObject:httpTask]){
                 [mapTask addHttpTask:httpTask];
                 [self.taskList addPointer:(__bridge void*)httpTask];
             }
+            
             return mapTask;
-        }else{
+        }
+        else {
             __MFWAFNMapTask *mapTask = [[__MFWAFNMapTask alloc] init];
+            
             mapTask.identifier = httpTask.identifier;
             mapTask.url = httpTask.request.URLString;
             mapTask.parameters = httpTask.request.params;
             mapTask.requestHeaders = httpTask.request.header.httpRequestHeaderFields;
             mapTask.httpMethodString = httpTask.request.httpMethodString;
             mapTask.type = (int)httpTask.taskType;
-            mapTask.requestPlugin = self.requestPlugin;
-            mapTask.responsePlugin = self.responsePlugin;
+            
+            if (self.responsePlugin) {
+                // 全部转换成pipeline，让pipeline处理runningInBackground的状况
+                if ([self.responsePlugin isKindOfClass:[MFWResponseHandlerPipeline class]]) {
+                    mapTask.responsePlugin = (MFWResponseHandlerPipeline *)self.responsePlugin;
+                }
+                else {
+                    mapTask.responsePlugin = [MFWResponseHandlerPipeline handlerPipeline:@[self.responsePlugin]];
+                }
+            }
+            
             mapTask.timeOut = httpTask.request.requestTimeout;
             [mapTask addHttpTask:httpTask];
+            
             [self.taskList addPointer:(__bridge void*)httpTask];
-            if(httpTask.taskType == HttpTaskTypeUpload){
+            
+            if(httpTask.taskType == MFWHttpTaskTypeUpload){
                 mapTask.uploadData = httpTask.uploadData;
             }
             [self.repeatRequestFilter setObject:mapTask forKey:httpTask.identifier];
+            
             return mapTask;
         }
     }
 }
 
 #pragma mark - 入口
-- (void)executeTask:(MFWHttpDataTask *)httpTask complection:(MFWHttpTaskCompletion)completion
+
+- (void)executeTask:(MFWHttpDataTask *)httpTask completion:(MFWHttpTaskCompletion)completion
 {
     if (httpTask == nil || [httpTask.request.URLString length] ==0)
     {
@@ -400,29 +462,39 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
     {
         httpTask.requestPlugin.requestBuildBlock(httpTask);
     }
+    
+    if(self.requestPlugin != nil &&
+       self.requestPlugin.requestBuildBlock !=nil)
+    {
+        self.requestPlugin.requestBuildBlock(httpTask);
+    }
+    
    LOCK(__MFWAFNMapTask *mapTask = [self _getMapTaskByHttpTask:httpTask]);
     switch (httpTask.taskType) {
-        case HttpTaskTypeRequest:
+        case MFWHttpTaskTypeRequest:
         {
            [self _requestMapTask:mapTask];
         }
             break;
-        case HttpTaskTypeDownload:
+        case MFWHttpTaskTypeDownload:
         {
            [self _downloadMapTask:mapTask];
         }
             break;
-        case HttpTaskTypeUpload:
+        case MFWHttpTaskTypeUpload:
         {
             [self _uploadMapTask:mapTask];
         }
             break;
         default:
         {
-            NSAssert(NO, @"taskType is unkonw");
+            MFWHttpManagerAssert(NO, @"taskType is unkonw");
         }
             break;
     }
+    
+    // 设置engine
+    [httpTask weak_setHttpEngine:self];
 }
 
 #pragma mark 普通请求
@@ -440,7 +512,7 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
         }];
         if(error == nil){
             dataTask = [self.sessionManager dataTaskWithRequest:request completionHandler:^(NSURLResponse * _Nonnull response, id  _Nonnull responseObject, NSError * _Nonnull error) {
-                mapTask.responseObj = responseObject;
+                mapTask.responseData = responseObject;
                 mapTask.error = error;
                 mapTask.mapTaskStatus =  error == nil ? MapTaskStatusSucceeded : MapTaskStatusFailed;
             }];
@@ -449,7 +521,7 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
             [dataTask resume];
             mapTask.mapTaskStatus = MapTaskStatusStarted;
         }else{
-            NSAssert(NO, @"创建普通请求失败");
+            MFWHttpManagerAssert(NO, @"创建普通请求失败");
         }
     }
 }
@@ -505,7 +577,7 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
                     }
                 }];
             }else{
-                NSAssert(NO, @"创建下载请求失败");
+                MFWHttpManagerAssert(NO, @"创建下载请求失败");
             }
         }
         downloadSessionTask.mFWHttpTaskAFNEngine_resourceID = mapTask.identifier;
@@ -613,8 +685,14 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
         NSError *error = nil;
         NSMutableURLRequest *request =  [self.backgroundSessionManager.requestSerializer multipartFormRequestWithMethod:mapTask.httpMethodString URLString:mapTask.url parameters:mapTask.parameters constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
             [[mapTask.uploadData allKeys] enumerateObjectsUsingBlock:^(NSString * _Nonnull key, NSUInteger idx, BOOL * _Nonnull stop) {
-                NSURL *url = [mapTask.uploadData objectForKey:key];
-                [formData appendPartWithFileURL:url name:key error:nil];
+                id data = [mapTask.uploadData objectForKey:key];
+                if([data isKindOfClass:[NSData class]]){
+                    [formData appendPartWithFileData:data name:key fileName:key mimeType:@"application/octet-stream"];
+                }else if([data isKindOfClass:[NSURL class]]){
+                    [formData appendPartWithFileURL:data name:key error:nil];
+                }else{
+                     MFWHttpManagerAssert(NO, @"上传的数据必须为 NSData 或者 NSURL  的类型", __PRETTY_FUNCTION__);
+                }
             }];
         } error:&error];
         request.timeoutInterval = mapTask.timeOut;
@@ -628,7 +706,7 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
             uploadDataTask = [self.sessionManager uploadTaskWithStreamedRequest:request  progress:^(NSProgress *aProgress){
                 mapTask.progress = aProgress;
             }completionHandler:^(NSURLResponse * _Nonnull response, id  _Nonnull responseObject, NSError * _Nonnull error){
-                mapTask.responseObj = responseObject;
+                mapTask.responseData = responseObject;
                 mapTask.error = error;
                 mapTask.mapTaskStatus =  error == nil ? MapTaskStatusSucceeded : MapTaskStatusFailed;
             }];
@@ -637,7 +715,7 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
             [uploadDataTask resume];
             mapTask.mapTaskStatus = MapTaskStatusStarted;
         }else{
-            NSAssert(NO, @"创建上传请求失败");
+            MFWHttpManagerAssert(NO, @"创建上传请求失败");
         }
     }
 }
@@ -657,37 +735,35 @@ const char *NSURLSessionDownloadTaskResourceIDKEY = "NSURLSessionDownloadTaskRes
 #pragma mark- 取消请求
 - (void)cancelTask:(MFWHttpDataTask *)httpTask
 {
-    if(httpTask == nil || ![[self.taskList allObjects] containsObject:httpTask]){
+    if (httpTask == nil || ![[self.taskList allObjects] containsObject:httpTask]) {
         return;
     }
+    
     LOCK(__MFWAFNMapTask *mapTask = [self _getMapTaskByHttpTask:httpTask];
          [mapTask cancelHttpTask:httpTask]);
-    if([mapTask isCancelled]){
+    
+    if (mapTask != nil && [mapTask isEmpty]) {
         NSURLSessionTask *sessionTask = mapTask.sessionTask;
         __weak MFWHttpTaskAFNEngine *wself = self;
-        if(sessionTask != nil)
+        
+        if([sessionTask isKindOfClass:[NSURLSessionDownloadTask class]])
         {
-            if([sessionTask isKindOfClass:[NSURLSessionDownloadTask class]])
-            {
-                NSURLSessionDownloadTask *sessionDownloadTask = (NSURLSessionDownloadTask *)sessionTask;
-                [sessionDownloadTask cancelByProducingResumeData:^(NSData *resumeData)
-                 {
-                     MFWHttpTaskAFNEngine *sself = wself;
-                     [sself _saveTempDownloadFileBy:resumeData fileName:sessionTask.mFWHttpTaskAFNEngine_resourceID];
-                 }];
-            }
-            else{
-                [sessionTask cancel];
-            }
+            NSURLSessionDownloadTask *sessionDownloadTask = (NSURLSessionDownloadTask *)sessionTask;
+            [sessionDownloadTask cancelByProducingResumeData:^(NSData *resumeData) {
+                 MFWHttpTaskAFNEngine *sself = wself;
+                 [sself _saveTempDownloadFileBy:resumeData fileName:sessionTask.mFWHttpTaskAFNEngine_resourceID];
+             }];
         }
-        mapTask.mapTaskStatus = MapTaskStatusCanceled;
+        else{
+            [sessionTask cancel];
+        }
     }
 }
 
 - (void)cancelAllTask
 {
     [[self.taskList allObjects] enumerateObjectsUsingBlock:^(MFWHttpDataTask * _Nonnull aTask, NSUInteger idx, BOOL * _Nonnull stop) {
-        if(aTask.taskStatus == HttpTaskStatusAdded || aTask.taskStatus == HttpTaskStatusStarted){
+        if(aTask.taskStatus == MFWHttpTaskStatusAdded || aTask.taskStatus == MFWHttpTaskStatusStarted){
             [self cancelTask:aTask];
         }
     }];

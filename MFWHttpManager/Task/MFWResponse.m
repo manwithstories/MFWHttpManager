@@ -46,13 +46,13 @@
 
 
 - (instancetype)initWithUrlResponse:(NSURLResponse *)response
-                         reponseObj:(id)obj
+                       responseData:(NSData *)data
 {
     self = [super init];
     if (self)
     {
         _urlResponse = (NSHTTPURLResponse *)response;
-        _responseData = obj;
+        _responseData = data;
         _header = nil;
     }
     return self;

@@ -19,6 +19,7 @@
         _responseHandleBlock = ^(MFWHttpDataTask *httpTask){
             NSLog(@"私有后插件执行了~~~~~");
         };
+        self.runningInBackground = YES;
     }
     return self;
 }

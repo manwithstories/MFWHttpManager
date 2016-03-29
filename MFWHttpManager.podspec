@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
 s.name             = "MFWHttpManager"
-s.version          = "1.0.1"
+s.version          = "1.0.2"
 s.summary          = "MFWHttpManager"
 s.source           = { :path => './'}
 s.social_media_url = 'http://www.mafengwo.cn'

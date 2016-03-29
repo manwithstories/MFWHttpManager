@@ -1,4 +1,5 @@
 //  MFWHttpTaskEngine.h
+//
 //  Created by MFWMobile on 15/8/20.
 //  Copyright © 2015年 MFWMobile. All rights reserved.
 
@@ -7,9 +8,8 @@
 
 @interface MFWHttpTaskEngine : NSObject
 
-//普通请求
 - (void)executeTask:(MFWHttpDataTask *)httpTask
-        complection:(MFWHttpTaskCompletion)completion;
+        completion:(MFWHttpTaskCompletion)completion;
 
 - (void)cancelTask:(MFWHttpDataTask *)httpTask;
 - (void)cancelAllTask;

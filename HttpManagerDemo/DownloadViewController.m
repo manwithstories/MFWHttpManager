@@ -77,7 +77,7 @@
         self.task1.request.requestTimeout = 10;
         self.task1.request.httpMethod = MFWRequestHttpMethodGet;
         self.task1.request.URLString = DOWN_FILE;
-        self.task1.taskType = HttpTaskTypeDownload;
+        self.task1.taskType = MFWHttpTaskTypeDownload;
         
          NSString *path = [NSString stringWithFormat:@"%@%@",NSHomeDirectory(),DOWN_PATH];
         self.task1.saveDownloadFilePath = path ;
@@ -87,9 +87,11 @@
             });
         };
         
-        [self.engine executeTask:self.task1 complection:^(BOOL succeed, BOOL cancelled, id responeseData, NSError *error) {
+        [self.engine executeTask:self.task1 completion:^(MFWHttpDataTask *task, BOOL succeed, BOOL cancelled, id responeseData, NSError *error) {
             
         }];
+        
+        
     }else{
         [self.engine cancelTask:self.task1];
     }
@@ -104,7 +106,7 @@
         self.task2.request.requestTimeout = 10;
         self.task2.request.httpMethod = MFWRequestHttpMethodGet;
         self.task2.request.URLString = DOWN_FILE;
-        self.task2.taskType = HttpTaskTypeDownload;
+        self.task2.taskType = MFWHttpTaskTypeDownload;
          NSString *path = [NSString stringWithFormat:@"%@%@",NSHomeDirectory(),DOWN_PATH];
         self.task2.saveDownloadFilePath = path ;
         __weak DownloadViewController *wself = self;
@@ -113,7 +115,7 @@
                 [wself.progressView2 setProgress:progress.fractionCompleted animated:YES];
             });
         };
-        [self.engine executeTask:self.task2 complection:^(BOOL succeed, BOOL cancelled, id responeseData, NSError *error) {
+        [self.engine executeTask:self.task2 completion:^(MFWHttpDataTask *aTask, BOOL succeed, BOOL cancelled, id responeseData, NSError *error) {
             if(error == nil){
                  NSLog(@"下载完成了");
                 dispatch_sync(dispatch_get_main_queue(), ^{

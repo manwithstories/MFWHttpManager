@@ -31,14 +31,14 @@ static NSString * const last_modified_key = @"Last-Modified";
 @interface MFWResponse : NSObject
 
 @property(nonatomic, strong, readonly) MFWHttpResponseHeader *header;
-@property(nonatomic, weak, readonly) id responseData;
+@property(nonatomic, strong, readonly) NSData *responseData;
 @property(nonatomic, strong, readonly) NSString *responseString;
 @property(nonatomic, strong, readonly) NSDictionary *responseDcit;
 @property(nonatomic, assign, readonly) NSInteger statusCode;
 
 
 - (instancetype)initWithUrlResponse:(NSURLResponse *)response
-                            reponseObj:(id)obj;
+                       responseData:(NSData *)data;
 
 
 @end

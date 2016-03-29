@@ -7,7 +7,6 @@
 
 @interface MFWRequestBaseBuilder : NSObject <HttpRequestBuildProtocol>
 
-
 + (id<HttpRequestBuildProtocol>)builder;
 
 @end

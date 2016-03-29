@@ -40,6 +40,7 @@
 		235DE6701CA00F1400103BC1 /* UploadViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 235DE6551CA00F1300103BC1 /* UploadViewController.m */; };
 		235DE6711CA00F1400103BC1 /* NSDictionary+Description.m in Sources */ = {isa = PBXBuildFile; fileRef = 235DE6581CA00F1300103BC1 /* NSDictionary+Description.m */; };
 		235DE6741CA011D300103BC1 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 235DE6721CA011D300103BC1 /* LaunchScreen.xib */; };
+		6A0DFE621CA3C38300A3891D /* MFWHttpManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 6A0DFE611CA3C38300A3891D /* MFWHttpManager.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -107,6 +108,7 @@
 		235DE6581CA00F1300103BC1 /* NSDictionary+Description.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSDictionary+Description.m"; sourceTree = "<group>"; };
 		235DE6731CA011D300103BC1 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
 		23CAF3861CA026180013EAD8 /* MFWHttpManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MFWHttpManager.h; sourceTree = "<group>"; };
+		6A0DFE611CA3C38300A3891D /* MFWHttpManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MFWHttpManager.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -213,6 +215,7 @@
 				235DE6111CA00E0F00103BC1 /* Plugin */,
 				235DE61E1CA00E0F00103BC1 /* Task */,
 				23CAF3861CA026180013EAD8 /* MFWHttpManager.h */,
+				6A0DFE611CA3C38300A3891D /* MFWHttpManager.m */,
 			);
 			path = MFWHttpManager;
 			sourceTree = "<group>";
@@ -395,6 +398,7 @@
 				235DE6291CA00E0F00103BC1 /* MFWResponseBaseHandler.m in Sources */,
 				235DE6591CA00F1300103BC1 /* DownloadViewController.m in Sources */,
 				235DE6251CA00E0F00103BC1 /* MFWHttpTaskEngine.m in Sources */,
+				6A0DFE621CA3C38300A3891D /* MFWHttpManager.m in Sources */,
 				235DE65C1CA00F1300103BC1 /* NormalViewController.m in Sources */,
 				235DE6281CA00E0F00103BC1 /* MFWRequestBuilderPipeline.m in Sources */,
 				235DE5641CA00D8400103BC1 /* main.m in Sources */,

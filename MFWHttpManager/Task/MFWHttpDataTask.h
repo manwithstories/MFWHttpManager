@@ -13,9 +13,9 @@
 @class MFWRequestBaseBuilder;
 
 
-typedef void(^MFWHttpTaskCompletion)(BOOL succeed,BOOL cancelled,id responeseData,NSError *error);
-typedef void(^MFWHttpTaskProgerssBlock)(MFWHttpDataTask *task,NSProgress *progress);
-typedef void(^MFWHttpTaskCacheCompletion)(NSData *cacheData,NSError *error);
+typedef void(^MFWHttpTaskCompletion)(MFWHttpDataTask *task, BOOL succeed, BOOL cancelled, NSData *responeseData, NSError *error);
+typedef void(^MFWHttpTaskProgressBlock)(MFWHttpDataTask *task, NSProgress *progress);
+typedef void(^MFWHttpTaskCacheCompletion)(MFWHttpDataTask *task, NSData *cacheData, NSError *error);
 
 
 typedef NS_ENUM(NSUInteger, MFWHttpTaskCachePolicy)
@@ -24,24 +24,24 @@ typedef NS_ENUM(NSUInteger, MFWHttpTaskCachePolicy)
     MFWHttpTaskIgnoreCache
 };
 
-typedef NS_ENUM(NSUInteger, HttpTaskType)
+typedef NS_ENUM(NSUInteger, MFWHttpTaskType)
 {
-    HttpTaskTypeRequest = 0,
-    HttpTaskTypeDownload ,
-    HttpTaskTypeUpload
+    MFWHttpTaskTypeRequest = 0,
+    MFWHttpTaskTypeDownload ,
+    MFWHttpTaskTypeUpload
 };
 
 /**
  * http请求状态
  */
 typedef enum{
-    HttpTaskStatusNone = 0 ,
-    HttpTaskStatusAdded,
-    HttpTaskStatusStarted,
-    HttpTaskStatusSucceeded,
-    HttpTaskStatusFailed,
-    HttpTaskStatusCanceled
-}HttpTaskStatus;
+    MFWHttpTaskStatusNone = 0 ,
+    MFWHttpTaskStatusAdded,
+    MFWHttpTaskStatusStarted,
+    MFWHttpTaskStatusSucceeded,
+    MFWHttpTaskStatusFailed,
+    MFWHttpTaskStatusCancelled
+}MFWHttpTaskStatus;
 
 //cache protocol
 @protocol MFWHttpTaskCacheDataProtocol <NSObject>
@@ -100,13 +100,13 @@ typedef enum{
 @property (nonatomic, strong) NSError *error;
 
 //任务类型
-@property (nonatomic, assign) HttpTaskType taskType;
+@property (nonatomic, assign) MFWHttpTaskType taskType;
 
 //是否缓存
 @property (nonatomic, assign) MFWHttpTaskCachePolicy taskCachePolicy;
 
 //task 状态
-@property (nonatomic, assign, readonly) HttpTaskStatus taskStatus;
+@property (nonatomic, assign, readonly) MFWHttpTaskStatus taskStatus;
 
 
 //请求处理插件
@@ -125,16 +125,16 @@ typedef enum{
 @property (nonatomic,  copy) MFWHttpTaskCompletion compBlock;
 
 //进度条Block只在下载或者上传类型的MFWHttpTask才会有作用
-@property (nonatomic,  copy) MFWHttpTaskProgerssBlock progerssBlock;
+@property (nonatomic,  copy) MFWHttpTaskProgressBlock progerssBlock;
 
 //获取task对应的资源ID - 对于同一个request配置项，ID相同
-@property (nonatomic, readonly,copy) NSString *identifier;
+@property (nonatomic, copy) NSString *identifier; // 可以修改，没有设定过，会有默认值
 
 //是否允许重复请求 - 默认不允许，允许的情况下，一个request配置项，ID 不同
 @property (nonatomic, assign) BOOL allowRepeat;
 
- //为你需要上传的文件指定  name (mutliPart协议规定多文件上传要指定name 以帮助服务器做资源区分) 和 NSURL（本地文件路径）
-@property (nonatomic, strong) NSDictionary<NSString *, NSURL *> *uploadData;
+//为你需要上传的文件指定  name (mutliPart协议规定多文件上传要指定name 以帮助服务器做资源区分) value 必须为 NSURL 或者 NSData 类型
+@property (nonatomic, strong) NSDictionary<NSString *, id> *uploadData;
 
 //如果是下载任务的时候 为你的下载的文件指定一个保存的路径,不能为空否则下载的文件不会被保存,如果这个目录不存在会自动为你创建该目录
 @property (nonatomic, copy) NSString *saveDownloadFilePath;
@@ -149,21 +149,22 @@ typedef enum{
  使用方式：可以用于简单的请求任务，也可以作为基础task 创建，再后续增补属性
  */
 + (MFWHttpDataTask *)taskWithURLString:(NSString *)urlString
-                            method:(MFWRequestHttpMethod)method
-                            params:(NSDictionary *)params
-                            taskType:(HttpTaskType)taskType;
+                                method:(MFWRequestHttpMethod)method
+                                params:(NSDictionary *)params
+                              taskType:(MFWHttpTaskType)taskType;
 
 
 
 #pragma mark -  load cache
 
 //读取缓存数据
-- (void)loadCacheDataWithComplecton:(MFWHttpTaskCacheCompletion)completion;
+- (void)loadCacheDataWithCompleton:(MFWHttpTaskCacheCompletion)completion;
 
 
 //清理缓存数据
 - (BOOL)cleanCacheData;
 
+- (void)cancel;
 
 @end
 

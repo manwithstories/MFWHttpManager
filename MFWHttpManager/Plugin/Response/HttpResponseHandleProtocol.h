@@ -11,10 +11,10 @@
 
 //response plugin
 typedef void(^MFWHttpResponseHandleBlock) (MFWHttpDataTask *task);
+
 @protocol HttpResponseHandleProtocol <NSObject,NSCopying>
 
-@required
 @property (nonatomic,copy) MFWHttpResponseHandleBlock responseHandleBlock;
-@property (nonatomic,assign) BOOL inBackgroundRun;
+@property (nonatomic,assign) BOOL runningInBackground;
 
 @end

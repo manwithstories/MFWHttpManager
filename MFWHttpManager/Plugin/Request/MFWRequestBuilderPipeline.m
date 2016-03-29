@@ -5,6 +5,7 @@
 #import "MFWRequestBuilderPipeline.h"
 
 @implementation MFWRequestBuilderPipeline
+
 @synthesize queue = _queue;
 @synthesize requestBuildBlock = _requestBuildBlock;
 
@@ -12,7 +13,6 @@
 {
     return [[self alloc] initWithQueue:nil];
 }
-
 
 + (MFWRequestBuilderPipeline *)builderPipeline:(NSArray<id<HttpRequestBuildProtocol>> *)pipeline
 {

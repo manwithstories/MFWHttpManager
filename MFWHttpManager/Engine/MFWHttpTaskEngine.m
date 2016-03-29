@@ -6,6 +6,7 @@
 #import "MFWHttpTaskAFNEngine.h"
 #import "MFWResponseHandlerPipeline.h"
 #import "MFWRequestBuilderPipeline.h"
+#import "MFWHttpManager.h"
 
 @interface MFWHttpTaskEngine ()
 @end
@@ -23,19 +24,20 @@
 }
 
 #pragma mark -
-- (void)executeTask:(MFWHttpDataTask *)httpTask complection:(MFWHttpTaskCompletion)completion
+
+- (void)executeTask:(MFWHttpDataTask *)httpTask completion:(MFWHttpTaskCompletion)completion
 {
-    NSAssert(NO, @"父类不应该实现该方法");
+    MFWHttpManagerAssert(NO, @"父类不应该实现该方法");
 }
 
 - (void)cancelTask:(MFWHttpDataTask *)httpTask
 {
-    NSAssert(NO, @"父类不应该实现该方法");
+    MFWHttpManagerAssert(NO, @"父类不应该实现该方法");
 }
 
 - (void)cancelAllTask
 {
-    NSAssert(NO, @"父类不应该实现该方法");
+    MFWHttpManagerAssert(NO, @"父类不应该实现该方法");
 }
 
 @end

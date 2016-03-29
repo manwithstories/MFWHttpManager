@@ -8,8 +8,7 @@
 
 @synthesize requestBuildBlock = _requestBuildBlock;
 
-
-+ (id <HttpRequestBuildProtocol> )builder
++ (id <HttpRequestBuildProtocol>)builder
 {
     return [[self alloc] init];
 }

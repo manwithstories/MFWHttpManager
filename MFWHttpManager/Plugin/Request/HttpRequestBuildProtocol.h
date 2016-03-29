@@ -14,7 +14,6 @@ typedef void(^MFWhttpRequestBuildBlock) (MFWHttpDataTask *task);
 
 @protocol HttpRequestBuildProtocol <NSObject,NSCopying>
 
-@required
 @property (nonatomic, copy) MFWhttpRequestBuildBlock requestBuildBlock;
 
 @end

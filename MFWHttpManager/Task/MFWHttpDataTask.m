@@ -6,18 +6,35 @@
 #import "MFWRequest.h"
 #import "MFWResponse.h"
 #import "MFWHttpTaskAFNEngine.h"
+#import "MFWHttpManager.h"
 
-#define separator @"$#@#$"
+#define MFWHttpTaskIdentifierSeparator @"$#@#$"
 
-@interface MFWHttpDataTask()
+@interface MFWHttpDataTask() {
+    __weak MFWHttpTaskEngine *_engine;
+}
+
 @property (nonatomic,readonly,copy) NSString *resourceId;
+
+- (void)weak_setHttpEngine:(MFWHttpTaskEngine *)engine;
+
 @end
 
 @implementation MFWHttpDataTask
+
 @synthesize response = _response;
 @synthesize identifier = _identifier;
 @synthesize resourceId = _resourceId;
 
+- (void)weak_setHttpEngine:(MFWHttpTaskEngine *)engine
+{
+    _engine = engine;
+}
+
+- (void)cancel
+{
+    [_engine cancelTask:self];
+}
 
 - (instancetype)init
 {
@@ -25,44 +42,21 @@
     if (self)
     {
         _taskCachePolicy = MFWHttpTaskNeedCache;
-        _taskType = HttpTaskTypeRequest;
+        _taskType = MFWHttpTaskTypeRequest;
         _request = [MFWRequest new];
     }
     return self;
 }
 
-
-//- (NSString *)taskTypeString
-//{
-//    NSString *type = nil;
-//    switch (self.taskType)
-//    {
-//        case HttpTaskTypeRequest:
-//            type = @"Request";
-//            break;
-//        case HttpTaskTypeUpload:
-//            type = @"Upload";
-//            break;
-//        case HttpTaskTypeDownload:
-//            type = @"Download";
-//            break;
-//        default:
-//            type = @"Request";
-//            break;
-//    }
-//    return type;
-//}
-
-
-- (HttpTaskType)taskType
+- (MFWHttpTaskType)taskType
 {
-    if (_taskType < HttpTaskTypeRequest)
+    if (_taskType < MFWHttpTaskTypeRequest)
     {
-        _taskType = HttpTaskTypeRequest;
+        _taskType = MFWHttpTaskTypeRequest;
     }
-    else if (_taskType > HttpTaskTypeUpload)
+    else if (_taskType > MFWHttpTaskTypeUpload)
     {
-        _taskType = HttpTaskTypeRequest;
+        _taskType = MFWHttpTaskTypeRequest;
     }
     return _taskType;
 }
@@ -86,9 +80,9 @@
 
 
 + (MFWHttpDataTask *)taskWithURLString:(NSString *)urlString
-                            method:(MFWRequestHttpMethod)method
-                            params:(NSDictionary *)params
-                            taskType:(HttpTaskType)taskType
+                                method:(MFWRequestHttpMethod)method
+                                params:(NSDictionary *)params
+                              taskType:(MFWHttpTaskType)taskType
 {
     MFWHttpDataTask *task = [[MFWHttpDataTask alloc] init];
     
@@ -104,7 +98,7 @@
 
 #pragma mark - load cache data
 //读取缓存数据
-- (void)loadCacheDataWithComplecton:(MFWHttpTaskCacheCompletion)completion
+- (void)loadCacheDataWithCompleton:(MFWHttpTaskCacheCompletion)completion
 {
     if (self.cacheHandler && [self.cacheHandler respondsToSelector:@selector(loadTask:cacheDataId:completion:)])
     {
@@ -143,14 +137,19 @@
 #pragma mark - override identifier
 - (NSString *)identifier
 {
-    if([_identifier length]<1)
+    if([_identifier length] == 0)
     {
         if(self.allowRepeat)
         {
-            NSDateFormatter  *dateformatter = [[NSDateFormatter alloc] init];
-            [dateformatter setDateFormat:@"YYYY-MM-dd hh:mm:ss:SSS"];
+            static NSDateFormatter *dateformatter = nil;
+            static dispatch_once_t onceToken;
+            dispatch_once(&onceToken, ^{
+                dateformatter = [[NSDateFormatter alloc] init];
+                [dateformatter setDateFormat:@"YYYY-MM-dd hh:mm:ss:SSS"];
+            });
+            
             NSString *timeNow = [dateformatter stringFromDate:[NSDate date]];
-            _identifier = [NSString stringWithFormat:@"%@%@%@%@%d",self.resourceId,separator,timeNow,separator,(arc4random() % INT_MAX)];
+            _identifier = [NSString stringWithFormat:@"%@%@%@%@%d",self.resourceId,MFWHttpTaskIdentifierSeparator,timeNow,MFWHttpTaskIdentifierSeparator,(arc4random() % INT_MAX)];
         }
         else
         {
@@ -163,7 +162,7 @@
 #pragma mark - override getter allowRepeat
 - (BOOL)allowRepeat
 {
-    if(self.taskType == HttpTaskTypeUpload){
+    if(self.taskType == MFWHttpTaskTypeUpload){
         return YES;
     }else{
         return _allowRepeat;
@@ -184,31 +183,31 @@
 }
 
 #pragma mark - override setter taskStatus
-- (void)setTaskStatus:(HttpTaskStatus)taskStatus
+- (void)setTaskStatus:(MFWHttpTaskStatus)taskStatus
 {
     _taskStatus = taskStatus;
     switch (_taskStatus) {
-        case HttpTaskStatusAdded:
+        case MFWHttpTaskStatusAdded:
         {
             if(self.observerDelegate != nil && [self.observerDelegate respondsToSelector:@selector(httpTaskAdded:)]){
                 [self.observerDelegate httpTaskStarted:self];
             }
         }
             break;
-        case HttpTaskStatusStarted:
+        case MFWHttpTaskStatusStarted:
         {
             if(self.observerDelegate != nil && [self.observerDelegate respondsToSelector:@selector(httpTaskStarted:)]){
                 [self.observerDelegate httpTaskStarted:self];
             }
         }
             break;
-        case HttpTaskStatusSucceeded:
+        case MFWHttpTaskStatusSucceeded:
         {
             if(self.observerDelegate != nil && [self.observerDelegate respondsToSelector:@selector(httpTaskStartedSucceeded:)]){
                 [self.observerDelegate httpTaskStartedSucceeded:self];
             }
             
-            if(self.taskType == HttpTaskTypeRequest)
+            if(self.taskType == MFWHttpTaskTypeRequest)
             {
                 if(self.cacheHandler != nil &&
                    [self.cacheHandler respondsToSelector:@selector(saveTask:cacheData:dataId:)])
@@ -219,7 +218,7 @@
                 }
             }
             
-            if(self.taskType == HttpTaskTypeDownload)
+            if(self.taskType == MFWHttpTaskTypeDownload)
             {
                 if(self.cacheHandler != nil &&
                    [self.cacheHandler respondsToSelector:@selector(saveTask:downloadFile:dataId:)]){
@@ -228,26 +227,35 @@
                                          dataId:self.resourceId];
                 }
             }
+            
+            // 清空engine
+            [self weak_setHttpEngine:nil];
         }
             break;
-        case HttpTaskStatusFailed:
+        case MFWHttpTaskStatusFailed:
         {
             if(self.observerDelegate != nil && [self.observerDelegate respondsToSelector:@selector(httpTaskStartedFailed:withError:)]){
                 [self.observerDelegate httpTaskStartedFailed:self withError:self.error];
             }
+            
+            // 清空engine
+            [self weak_setHttpEngine:nil];
         }
             break;
-        case HttpTaskStatusCanceled:
+        case MFWHttpTaskStatusCancelled:
         {
             if(self.observerDelegate != nil && [self.observerDelegate respondsToSelector:@selector(httpTaskCancelled:)]){
                 [self.observerDelegate httpTaskCancelled:self];
             }
+            
+            // 清空engine
+            [self weak_setHttpEngine:nil];
         }
             break;
         
         default:
         {
-            NSAssert(NO, @"MFWHttpTask cant't have  a unkonow State");
+            MFWHttpManagerAssert(NO, @"MFWHttpTask cant't have  a unkonow State");
         }
             break;
     }

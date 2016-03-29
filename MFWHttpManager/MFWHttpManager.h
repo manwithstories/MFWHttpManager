@@ -6,12 +6,6 @@
 //  Copyright © 2016年 刘澈. All rights reserved.
 //
 
-#ifndef MFWHttpManager_h
-#define MFWHttpManager_h
-
-
-#endif /* MFWHttpManager_h */
-
 //任务
 #import "MFWHttpDataTask.h"
 #import "MFWRequest.h"
@@ -25,3 +19,22 @@
 
 //流水线处理引擎
 #import "MFWHttpTaskEngine.h"
+
+
+#if DEBUG
+#define  MFWHttpManagerAssert(condition,fmt,...) \
+if(!(condition)) {\
+NSAssert(NO,fmt, ##__VA_ARGS__);\
+}
+#else
+#define  MFWHttpManagerAssert(condition,fmt,...) \
+NSLog((@"crush in debug :%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__);
+#endif
+
+
+
+@interface MFWHttpManager : NSObject
+
++ (MFWHttpTaskEngine *)defaultEngine;
+
+@end
