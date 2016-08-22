@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		230F83291D4776AE00438083 /* AFgzipRequestSerializer.m in Sources */ = {isa = PBXBuildFile; fileRef = 230F83221D4776AE00438083 /* AFgzipRequestSerializer.m */; };
+		230F832A1D4776AE00438083 /* NSData+Godzippa.m in Sources */ = {isa = PBXBuildFile; fileRef = 230F83261D4776AE00438083 /* NSData+Godzippa.m */; };
+		230F832B1D4776AE00438083 /* NSFileManager+Godzippa.m in Sources */ = {isa = PBXBuildFile; fileRef = 230F83281D4776AE00438083 /* NSFileManager+Godzippa.m */; };
+		230F832D1D4777E900438083 /* libz.1.2.5.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 230F832C1D4777E900438083 /* libz.1.2.5.tbd */; };
 		235DE5641CA00D8400103BC1 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 235DE5631CA00D8400103BC1 /* main.m */; };
 		235DE5671CA00D8400103BC1 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 235DE5661CA00D8400103BC1 /* AppDelegate.m */; };
 		235DE5701CA00D8400103BC1 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 235DE56E1CA00D8400103BC1 /* Main.storyboard */; };
@@ -44,6 +48,14 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		230F83211D4776AE00438083 /* AFgzipRequestSerializer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFgzipRequestSerializer.h; sourceTree = "<group>"; };
+		230F83221D4776AE00438083 /* AFgzipRequestSerializer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFgzipRequestSerializer.m; sourceTree = "<group>"; };
+		230F83241D4776AE00438083 /* Godzippa.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Godzippa.h; sourceTree = "<group>"; };
+		230F83251D4776AE00438083 /* NSData+Godzippa.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSData+Godzippa.h"; sourceTree = "<group>"; };
+		230F83261D4776AE00438083 /* NSData+Godzippa.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSData+Godzippa.m"; sourceTree = "<group>"; };
+		230F83271D4776AE00438083 /* NSFileManager+Godzippa.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSFileManager+Godzippa.h"; sourceTree = "<group>"; };
+		230F83281D4776AE00438083 /* NSFileManager+Godzippa.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSFileManager+Godzippa.m"; sourceTree = "<group>"; };
+		230F832C1D4777E900438083 /* libz.1.2.5.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.2.5.tbd; path = usr/lib/libz.1.2.5.tbd; sourceTree = SDKROOT; };
 		235DE55F1CA00D8400103BC1 /* HttpManagerDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HttpManagerDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		235DE5631CA00D8400103BC1 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		235DE5651CA00D8400103BC1 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -116,6 +128,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				230F832D1D4777E900438083 /* libz.1.2.5.tbd in Frameworks */,
 				235DE65A1CA00F1300103BC1 /* GHUnitIOS.framework in Frameworks */,
 				235DE6311CA00E9100103BC1 /* SystemConfiguration.framework in Frameworks */,
 				235DE62F1CA00E7500103BC1 /* MobileCoreServices.framework in Frameworks */,
@@ -126,9 +139,32 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		230F83201D4776AE00438083 /* AFgzipRequestSerializer */ = {
+			isa = PBXGroup;
+			children = (
+				230F83211D4776AE00438083 /* AFgzipRequestSerializer.h */,
+				230F83221D4776AE00438083 /* AFgzipRequestSerializer.m */,
+				230F83231D4776AE00438083 /* Godzippa */,
+			);
+			path = AFgzipRequestSerializer;
+			sourceTree = "<group>";
+		};
+		230F83231D4776AE00438083 /* Godzippa */ = {
+			isa = PBXGroup;
+			children = (
+				230F83241D4776AE00438083 /* Godzippa.h */,
+				230F83251D4776AE00438083 /* NSData+Godzippa.h */,
+				230F83261D4776AE00438083 /* NSData+Godzippa.m */,
+				230F83271D4776AE00438083 /* NSFileManager+Godzippa.h */,
+				230F83281D4776AE00438083 /* NSFileManager+Godzippa.m */,
+			);
+			path = Godzippa;
+			sourceTree = "<group>";
+		};
 		235DE5561CA00D8400103BC1 = {
 			isa = PBXGroup;
 			children = (
+				230F832C1D4777E900438083 /* libz.1.2.5.tbd */,
 				235DE6301CA00E9100103BC1 /* SystemConfiguration.framework */,
 				235DE62E1CA00E7500103BC1 /* MobileCoreServices.framework */,
 				235DE60A1CA00E0F00103BC1 /* MFWHttpManager */,
@@ -191,6 +227,7 @@
 		235DE57D1CA00DBA00103BC1 /* AFNetworking */ = {
 			isa = PBXGroup;
 			children = (
+				230F83201D4776AE00438083 /* AFgzipRequestSerializer */,
 				235DE57E1CA00DBA00103BC1 /* AFHTTPSessionManager.h */,
 				235DE57F1CA00DBA00103BC1 /* AFHTTPSessionManager.m */,
 				235DE5801CA00DBA00103BC1 /* AFNetworking.h */,
@@ -383,6 +420,7 @@
 				235DE6261CA00E0F00103BC1 /* MFWHttpTaskAFNEngine.m in Sources */,
 				235DE62B1CA00E0F00103BC1 /* MFWHttpDataTask.m in Sources */,
 				235DE5C31CA00DBA00103BC1 /* AFURLResponseSerialization.m in Sources */,
+				230F832B1D4776AE00438083 /* NSFileManager+Godzippa.m in Sources */,
 				235DE65B1CA00F1300103BC1 /* MutilEngineViewController.m in Sources */,
 				235DE62A1CA00E0F00103BC1 /* MFWResponseHandlerPipeline.m in Sources */,
 				235DE65F1CA00F1300103BC1 /* TestPrivateResponsePlugin.m in Sources */,
@@ -391,10 +429,12 @@
 				235DE6711CA00F1400103BC1 /* NSDictionary+Description.m in Sources */,
 				235DE5BF1CA00DBA00103BC1 /* AFHTTPSessionManager.m in Sources */,
 				235DE65E1CA00F1300103BC1 /* TestPrivateRequstPugin.m in Sources */,
+				230F83291D4776AE00438083 /* AFgzipRequestSerializer.m in Sources */,
 				235DE6611CA00F1300103BC1 /* TestPublicResponsePlugin.m in Sources */,
 				235DE5C41CA00DBA00103BC1 /* AFURLSessionManager.m in Sources */,
 				235DE62C1CA00E0F00103BC1 /* MFWRequest.m in Sources */,
 				235DE5C01CA00DBA00103BC1 /* AFNetworkReachabilityManager.m in Sources */,
+				230F832A1D4776AE00438083 /* NSData+Godzippa.m in Sources */,
 				235DE6291CA00E0F00103BC1 /* MFWResponseBaseHandler.m in Sources */,
 				235DE6591CA00F1300103BC1 /* DownloadViewController.m in Sources */,
 				235DE6251CA00E0F00103BC1 /* MFWHttpTaskEngine.m in Sources */,

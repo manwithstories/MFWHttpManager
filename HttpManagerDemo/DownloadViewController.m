@@ -11,6 +11,7 @@
 #import "MFWHttpTaskEngine.h"
 
 #define DOWN_FILE @"http://supportdownload.apple.com/download.info.apple.com/Apple_Support_Area/Apple_Software_Updates/Mac_OS_X/downloads/031-03190.20140529.Pp3r4/JavaForOSX2014-001.dmg"
+//#define DOWN_FILE @"http://file105.mafengwo.net/s9/M00/D3/93/wKgBs1dH_m-AW0waAdYYScBJoAc786.zip"
 
 //#define DOWN_FILE @"http://dlsw.baidu.com/sw-search-sp/soft/10/25851/jdk-8u40-macosx-x64.1427945120.dmg"
 #define  DOWN_PATH @"/Documents/download/1"
@@ -82,9 +83,7 @@
          NSString *path = [NSString stringWithFormat:@"%@%@",NSHomeDirectory(),DOWN_PATH];
         self.task1.saveDownloadFilePath = path ;
         self.task1.progerssBlock = ^(MFWHttpDataTask *task,NSProgress *progress){
-            dispatch_sync(dispatch_get_main_queue(), ^{
-                [wself.progressView1 setProgress:progress.fractionCompleted];
-            });
+           [wself.progressView1 setProgress:progress.fractionCompleted];
         };
         
         [self.engine executeTask:self.task1 completion:^(MFWHttpDataTask *task, BOOL succeed, BOOL cancelled, id responeseData, NSError *error) {
@@ -111,19 +110,9 @@
         self.task2.saveDownloadFilePath = path ;
         __weak DownloadViewController *wself = self;
         self.task2.progerssBlock = ^(MFWHttpDataTask *task,NSProgress *progress){
-            dispatch_sync(dispatch_get_main_queue(), ^{
-                [wself.progressView2 setProgress:progress.fractionCompleted animated:YES];
-            });
+            [wself.progressView2 setProgress:progress.fractionCompleted animated:YES];
         };
         [self.engine executeTask:self.task2 completion:^(MFWHttpDataTask *aTask, BOOL succeed, BOOL cancelled, id responeseData, NSError *error) {
-            if(error == nil){
-                 NSLog(@"下载完成了");
-                dispatch_sync(dispatch_get_main_queue(), ^{
-                    [wself.progressView2 setProgress:1];
-                });
-            }else{
-                NSLog(@"%@",error);
-            }
         }];
     }else{
         [self.engine cancelTask:self.task2];

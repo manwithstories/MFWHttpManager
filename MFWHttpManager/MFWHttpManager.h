@@ -28,7 +28,9 @@ NSAssert(NO,fmt, ##__VA_ARGS__);\
 }
 #else
 #define  MFWHttpManagerAssert(condition,fmt,...) \
-NSLog((@"crush in debug :%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__);
+if(!(condition)) {\
+NSLog((@"crush in debug :%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__);\
+}
 #endif
 
 

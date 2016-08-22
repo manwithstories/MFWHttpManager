@@ -142,6 +142,8 @@ typedef enum{
 //如果是下载任务的时候 为你的下载的文件指定一个保存的文件名,如果为空则会用服务器的资源名代替。
 @property (nonatomic, copy) NSString *saveDownloadFileName;
 
+@property (nonatomic, assign) BOOL requestSupportGzip;
+
 
 /*
  一个普通请求(MFWHttpTaskTypeRequest)任务的基本参数封装，返回task 对象
@@ -152,7 +154,6 @@ typedef enum{
                                 method:(MFWRequestHttpMethod)method
                                 params:(NSDictionary *)params
                               taskType:(MFWHttpTaskType)taskType;
-
 
 
 #pragma mark -  load cache
@@ -168,6 +169,20 @@ typedef enum{
 
 @end
 
+@interface MFWHttpDataTask (MFWQuickInit)
 
++ (MFWHttpDataTask *)requestTaskWithURLString:(NSString *)urlString
+                                       method:(MFWRequestHttpMethod)method
+                                       params:(NSDictionary *)params;
+
++ (MFWHttpDataTask *)uploadTaskWithURLString:(NSString *)urlString
+                                      method:(MFWRequestHttpMethod)method
+                                      params:(NSDictionary *)params;
+
++ (MFWHttpDataTask *)downloadTaskWithURLString:(NSString *)urlString
+                                        method:(MFWRequestHttpMethod)method
+                                        params:(NSDictionary *)params;
+
+@end
 
 

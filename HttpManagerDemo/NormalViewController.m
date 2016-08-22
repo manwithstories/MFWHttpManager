@@ -71,6 +71,8 @@
         task.request.httpMethod = MFWRequestHttpMethodGet;
         task.request.URLString = @"http://182.92.72.114/source/plugin/aimdev/api/simulate/simulatelist.php";
         
+        task.requestSupportGzip = YES;
+        
         TestPrivateRequstPugin *privateRequestPlugin = [TestPrivateRequstPugin builder];
         
         task.requestPlugin = [MFWRequestBuilderPipeline builderPipeline:@[privateRequestPlugin]];

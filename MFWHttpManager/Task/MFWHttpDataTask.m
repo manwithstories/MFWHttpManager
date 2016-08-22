@@ -125,7 +125,8 @@
 - (NSString *)resourceId
 {
     if([_resourceId length]<1){
-        NSString *str = [NSString stringWithFormat:@"%@%lu%@",self.request.URLString,(unsigned long)self.request.httpMethod,self.request.params];
+        NSString *str = [NSString stringWithFormat:@"%@%lu%@%@",self.request.URLString,(unsigned long)self.request.httpMethod,self.request.params,self.requestSupportGzip?@"gzip":@""];
+        
         NSString *dataID =  [str stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
         NSData *data = [dataID dataUsingEncoding:NSUTF8StringEncoding];
         NSString *resourceId = [data base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
@@ -259,6 +260,31 @@
         }
             break;
     }
+}
+
+@end
+
+@implementation MFWHttpDataTask (MFWQuickInit)
+
++ (MFWHttpDataTask *)requestTaskWithURLString:(NSString *)urlString
+                                       method:(MFWRequestHttpMethod)method
+                                       params:(NSDictionary *)params
+{
+    return [self taskWithURLString:urlString method:method params:params taskType:MFWHttpTaskTypeRequest];
+}
+
++ (MFWHttpDataTask *)uploadTaskWithURLString:(NSString *)urlString
+                                      method:(MFWRequestHttpMethod)method
+                                      params:(NSDictionary *)params;
+{
+    return [self taskWithURLString:urlString method:method params:params taskType:MFWHttpTaskTypeUpload];
+}
+
++ (MFWHttpDataTask *)downloadTaskWithURLString:(NSString *)urlString
+                                        method:(MFWRequestHttpMethod)method
+                                        params:(NSDictionary *)params;
+{
+    return [self taskWithURLString:urlString method:method params:params taskType:MFWHttpTaskTypeDownload];
 }
 
 @end
