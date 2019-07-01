@@ -11,5 +11,6 @@ s.requires_arc = true
 s.xcconfig = { 'ONLY_ACTIVE_ARCH' => 'NO', 'ENABLE_BITCODE' => 'NO' }
 s.public_header_files = ['MFWHttpManager/**/*.h']
 s.source_files = ['MFWHttpManager/**/*.{h,m}']
-s.dependency 'AFgzipRequestSerializer', :git => 'https://github.com/manwithstories/AFgzipRequestSerializer', :branch => 'master'
+s.dependency 'AFNetworking'
+
 end
