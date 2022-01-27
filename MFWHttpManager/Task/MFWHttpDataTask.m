@@ -256,7 +256,7 @@
         
         default:
         {
-            MFWHttpManagerAssert(NO, @"MFWHttpTask cant't have  a unkonow State");
+            MFWHttpManagerAssert(NO, @"MFWHttpTask cant't have  a unknown State");
         }
             break;
     }
